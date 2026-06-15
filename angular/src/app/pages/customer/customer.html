@@ -1,0 +1,107 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="mb-0">Customers</h5>
+  <button class="btn btn-primary btn-sm" (click)="startCreate()">
+    <i class="bi bi-plus-lg"></i> New Customer
+  </button>
+</div>
+
+<div class="input-group mb-3" style="max-width: 360px">
+  <input
+    class="form-control"
+    placeholder="Search by name..."
+    [ngModel]="search()"
+    (ngModelChange)="search.set($event)"
+  />
+  <button class="btn btn-outline-secondary" (click)="load()"><i class="bi bi-search"></i></button>
+</div>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>Address</th>
+          <th>Location</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (c of customers(); track c.customerId) {
+          <tr>
+            <td>{{ c.customerId }}</td>
+            <td>{{ c.name }}</td>
+            <td>{{ c.phone }}</td>
+            <td>{{ c.address }}</td>
+            <td>{{ c.location }}</td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-primary me-1" (click)="startEdit(c)">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" (click)="remove(c)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="text-center text-muted py-3">No customers</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@if (editing(); as cust) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.5)">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ isNew() ? 'New Customer' : 'Edit Customer' }}</h5>
+          <button type="button" class="btn-close" (click)="cancel()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Customer Name</label>
+            <input
+              class="form-control"
+              [ngModel]="cust.name"
+              (ngModelChange)="updateField('name', $event)"
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Phone</label>
+            <input
+              class="form-control"
+              [ngModel]="cust.phone"
+              (ngModelChange)="updateField('phone', $event)"
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Address</label>
+            <input
+              class="form-control"
+              [ngModel]="cust.address"
+              (ngModelChange)="updateField('address', $event)"
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Location</label>
+            <input
+              class="form-control"
+              [ngModel]="cust.location"
+              (ngModelChange)="updateField('location', $event)"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="cancel()">Cancel</button>
+          <button class="btn btn-primary" (click)="save()">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

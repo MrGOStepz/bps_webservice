@@ -1,0 +1,82 @@
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <h5 class="mb-3">Filter Search History</h5>
+    <div class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label">Customer</label>
+        <select
+          class="form-select"
+          [ngModel]="customerId()"
+          (ngModelChange)="customerId.set($event)"
+        >
+          <option [ngValue]="null">All customers</option>
+          @for (c of customers(); track c.customerId) {
+            <option [ngValue]="c.customerId">{{ c.name }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">From</label>
+        <input
+          type="date"
+          class="form-control"
+          [ngModel]="startDate()"
+          (ngModelChange)="startDate.set($event)"
+        />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">To</label>
+        <input
+          type="date"
+          class="form-control"
+          [ngModel]="endDate()"
+          (ngModelChange)="endDate.set($event)"
+        />
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-primary w-100" (click)="search()">
+          <i class="bi bi-search"></i> Search
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-striped mb-0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Date</th>
+          <th>Customer</th>
+          <th>Address</th>
+          <th>Items</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (order of results(); track order.id) {
+          <tr>
+            <td>{{ order.id }}</td>
+            <td>{{ order.orderDate }}</td>
+            <td>{{ order.customerName }}</td>
+            <td>{{ order.deliveryAddress }}</td>
+            <td>
+              @for (item of order.items; track $index) {
+                <span class="badge bg-light text-dark me-1">{{ item.name }} × {{ item.quantity }}</span>
+              }
+            </td>
+            <td>{{ order.status }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="text-center text-muted py-3">
+              {{ searched() ? 'No results found' : 'Use the filter above to search' }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

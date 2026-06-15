@@ -1,0 +1,47 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="mb-0">Order Dashboard <small class="text-muted">(7-day plan)</small></h5>
+  <button class="btn btn-sm btn-outline-secondary" (click)="load()">
+    <i class="bi bi-arrow-clockwise"></i> Refresh
+  </button>
+</div>
+
+<div class="week-grid">
+  @for (col of columns(); track col.date) {
+    <div class="day-column">
+      <div class="day-header">{{ col.label }}</div>
+      <div class="day-body">
+        @for (order of col.orders; track order.id) {
+          <div class="card order-card mb-2 shadow-sm">
+            <div class="card-body p-2">
+              <div class="d-flex justify-content-between align-items-start">
+                <strong>{{ order.customerName }}</strong>
+                <span class="badge" [class]="statusClass(order.status)">{{ order.status }}</span>
+              </div>
+              <div class="small text-muted">{{ order.deliveryAddress }}</div>
+              <ul class="small mb-2 ps-3">
+                @for (item of order.items; track $index) {
+                  <li>{{ item.name }} × {{ item.quantity }}</li>
+                }
+              </ul>
+              <div class="btn-group btn-group-sm w-100" role="group">
+                @for (s of statuses; track s) {
+                  <button
+                    type="button"
+                    class="btn"
+                    [class.btn-primary]="order.status === s"
+                    [class.btn-outline-secondary]="order.status !== s"
+                    (click)="changeStatus(order, s)"
+                  >
+                    {{ s.charAt(0) }}
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+        } @empty {
+          <div class="text-muted small text-center py-3">No orders</div>
+        }
+      </div>
+    </div>
+  }
+</div>
