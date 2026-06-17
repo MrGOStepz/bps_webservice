@@ -17,12 +17,12 @@ export const routes: Routes = [
     path: '',
     component: Shell,
     children: [
-      { path: 'dashboard', component: Dashboard, canActivate: [pageGuard('dashboard')] },
+      { path: 'dashboard', component: Dashboard },
       { path: 'form', component: FormPage, canActivate: [pageGuard('form')] },
       { path: 'history', component: History, canActivate: [pageGuard('history')] },
       { path: 'customers', component: CustomerPage, canActivate: [pageGuard('customer')] },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },
-  { path: '**', redirectTo: 'login' }
+  { path: '**', redirectTo: '' }
 ];

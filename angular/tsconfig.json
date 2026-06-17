@@ -9,6 +9,8 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
     "isolatedModules": true,
+    "sourceMap": true,
+    "inlineSources": true,
     "experimentalDecorators": true,
     "importHelpers": true,
     "target": "ES2022",
