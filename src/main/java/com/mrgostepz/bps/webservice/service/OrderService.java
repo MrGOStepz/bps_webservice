@@ -6,6 +6,7 @@ import com.mrgostepz.bps.webservice.dto.OrderCard;
 import com.mrgostepz.bps.webservice.dto.OrderItemDto;
 import com.mrgostepz.bps.webservice.dto.OrderRequest;
 import com.mrgostepz.bps.webservice.dto.StatusUpdate;
+import com.mrgostepz.bps.webservice.enums.OrderStatus;
 import com.mrgostepz.bps.webservice.model.Customer;
 import com.mrgostepz.bps.webservice.model.OrderEntity;
 import com.mrgostepz.bps.webservice.repository.CustomerRepository;
@@ -21,7 +22,6 @@ import java.util.Optional;
 @Service
 public class OrderService {
 
-    private static final String DEFAULT_STATUS = "NEW";
     private static final String TOPIC_ORDERS = "/topic/orders";
 
     private final OrderRepository orderRepository;
@@ -44,7 +44,7 @@ public class OrderService {
         order.setCustomerId(request.getCustomerId());
         order.setDeliveryAddress(request.getDeliveryAddress());
         order.setOrderDate(request.getOrderDate());
-        order.setStatus(DEFAULT_STATUS);
+        order.setStatus(OrderStatus.PROCESSING.toString());
         order.setOrderDetailJson(writeDetailJson(request));
         OrderEntity saved = orderRepository.save(order);
         messagingTemplate.convertAndSend(TOPIC_ORDERS, toCard(saved));

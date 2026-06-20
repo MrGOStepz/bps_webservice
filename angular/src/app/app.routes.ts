@@ -9,10 +9,10 @@ import { pageGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   { path: 'login', component: Login },
-  { path: 'dashboard', component: Dashboard },
-  { path: 'form', component: FormPage },
-  { path: 'history', component: History },
-  { path: 'customer', component: CustomerPage },
+  // { path: 'dashboard', component: Dashboard },
+  // { path: 'form', component: FormPage },
+  // { path: 'history', component: History },
+  // { path: 'customer', component: CustomerPage },
   {
     path: '',
     component: Shell,

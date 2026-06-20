@@ -27,12 +27,10 @@
                 @for (s of statuses; track s) {
                   <button
                     type="button"
-                    class="btn"
-                    [class.btn-primary]="order.status === s"
-                    [class.btn-outline-secondary]="order.status !== s"
+                    [class]="btnClass(order, s)"
                     (click)="changeStatus(order, s)"
                   >
-                    {{ s.charAt(0) }}
+                    {{ s }}
                   </button>
                 }
               </div>

@@ -29,7 +29,7 @@ export interface OrderRequest {
   items: OrderItem[];
 }
 
-export type OrderStatus = 'NEW' | 'PREPARING' | 'DELIVERING' | 'DONE';
+export type OrderStatus = 'กำลังผลิต' | 'ผลิตเสร็จแล้ว' | 'กำลังส่ง' | 'จัดส่งแล้ว';
 
 export interface OrderCard {
   id: number;
@@ -46,4 +46,4 @@ export interface StatusUpdate {
   status: OrderStatus;
 }
 
-export const ORDER_STATUSES: OrderStatus[] = ['NEW', 'PREPARING', 'DELIVERING', 'DONE'];
+export const ORDER_STATUSES: OrderStatus[] = ['กำลังผลิต', 'ผลิตเสร็จแล้ว', 'กำลังส่ง', 'จัดส่งแล้ว'];
