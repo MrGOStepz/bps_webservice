@@ -36,9 +36,7 @@
               "node_modules/bootstrap-icons/font/bootstrap-icons.css",
               "src/styles.scss"
             ],
-            "scripts": [
-              "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"
-            ],
+            "scripts": ["node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"],
             "security": {
               "allowedHosts": ["localhost", "127.0.0.1"]
             }
@@ -68,6 +66,9 @@
           "defaultConfiguration": "production"
         },
         "serve": {
+          "options": {
+            "allowedHosts": ["mrgostepz.thddns.net"]
+          },
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
