@@ -5,6 +5,65 @@
   </button>
 </div>
 
+<!-- Upload modal for delivery proof -->
+@if (uploadModalVisible()) {
+  <div class="modal-backdrop d-flex align-items-center justify-content-center">
+    <div class="card" style="width: 520px; max-width: 95%;">
+      <div class="card-body">
+        <h5 class="card-title">Upload delivery proof</h5>
+        <p class="small text-muted">Please upload an image or video as proof of delivery.</p>
+
+        <div class="mb-3">
+          <input type="file" accept="image/*,video/*" (change)="onUploadFileChange($event)" />
+        </div>
+
+        @if (uploadPreviewUrl()) {
+          <div class="mb-3 text-center">
+            @if (uploadFile() && uploadFile()!.type.startsWith('image/')) {
+              <img [src]="uploadPreviewUrl()" alt="Delivery proof image" style="max-width:100%; max-height:300px;" />
+            }
+            @if (uploadFile() && uploadFile()!.type.startsWith('video/')) {
+              <video [src]="uploadPreviewUrl()" controls style="max-width:100%; max-height:300px;"></video>
+            }
+          </div>
+        }
+
+        <div class="d-flex justify-content-end">
+          <button class="btn btn-sm btn-secondary me-2" (click)="closeUploadModal()">Cancel</button>
+          <button class="btn btn-sm btn-primary" (click)="uploadConfirm()" [disabled]="!uploadFile()">Upload & Mark Delivered</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Viewer modal for delivery proof -->
+@if (viewerModalVisible()) {
+  <div class="modal-backdrop d-flex align-items-center justify-content-center">
+    <div class="card" style="width: 520px; max-width: 95%;">
+      <div class="card-body">
+        <h5 class="card-title">Delivery Proof</h5>
+        <div class="mb-3 text-center">
+          @if (viewerError()) {
+            <div class="alert alert-warning" role="alert">{{ viewerError() }}</div>
+          } @else {
+            @if (viewerImagePath()) {
+              @if (viewerImagePath()!.endsWith('.mp4') || viewerImagePath()!.endsWith('.webm') || viewerImagePath()!.endsWith('.mov')) {
+                <video [src]="viewerImagePath()" controls style="max-width:100%; max-height:400px;"></video>
+              } @else {
+                <img [src]="viewerImagePath()" alt="Delivery proof" style="max-width:100%; max-height:400px;" />
+              }
+            }
+          }
+        </div>
+        <div class="d-flex justify-content-end">
+          <button class="btn btn-sm btn-secondary" (click)="closeViewerModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
 <div class="week-grid">
   @for (col of columns(); track col.date) {
     <div class="day-column">
@@ -16,7 +75,9 @@
               <div class="d-flex justify-content-between align-items-start">
                 <strong>
                   {{ order.customerName }}
-                  <span *ngIf="pendingFor(order.id)" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
+                  @if (pendingFor(order.id)) {
+                    <span class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
+                  }
                 </strong>
                 <span class="badge" [class]="statusClass(order.status)">{{ order.status }}</span>
               </div>
@@ -32,7 +93,8 @@
                     type="button"
                     [class]="btnClass(order, s)"
                     (click)="changeStatus(order, s)"
-                    [disabled]="pendingFor(order.id)"
+                    [disabled]="pendingFor(order.id) || !canSetStatus(s)"
+                    [attr.title]="!canSetStatus(s) ? 'You do not have permission to set this status' : null"
                   >
                     {{ s }}
                   </button>

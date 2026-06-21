@@ -43,11 +43,7 @@ export interface OrderCard {
   orderDate: string;
   status: OrderStatus;
   items: OrderItem[];
-}
-
-export interface StatusUpdate {
-  id: number;
-  status: OrderStatus;
+  imagePath?: string | null;
 }
 
 export const ORDER_STATUSES: OrderStatus[] = ['กำลังผลิต', 'ผลิตเสร็จแล้ว', 'กำลังส่ง', 'จัดส่งแล้ว'];

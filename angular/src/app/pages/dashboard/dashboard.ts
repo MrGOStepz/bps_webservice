@@ -1,8 +1,10 @@
 import { Component, inject, signal, computed, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { OrderService } from '../../services/order.service';
 import { WebSocketService } from '../../services/websocket.service';
-import { OrderCard, OrderStatus, ORDER_STATUSES, StatusUpdate } from '../../models/models';
+import { AuthService } from '../../services/auth.service';
+import { OrderCard, OrderStatus, ORDER_STATUSES } from '../../models/models';
 
 interface DayColumn {
   date: string;
@@ -21,6 +23,8 @@ interface DayColumn {
 export class Dashboard implements OnInit, OnDestroy {
   private orderService = inject(OrderService);
   private ws = inject(WebSocketService);
+  private auth = inject(AuthService);
+  private http = inject(HttpClient);
   private sub?: Subscription;
 
   readonly statuses = ORDER_STATUSES;
@@ -29,6 +33,17 @@ export class Dashboard implements OnInit, OnDestroy {
   // Track pending status updates per-order so we can disable controls while an
   // update is in-flight and show a small spinner.
   private pending = signal<Record<number, boolean>>({});
+
+  // Upload modal state (exposed to template)
+  uploadModalVisible = signal(false);
+  uploadOrderId = signal<number | null>(null);
+  uploadFile = signal<File | null>(null);
+  uploadPreviewUrl = signal<string | null>(null);
+
+  // Viewer modal state (for displaying already-uploaded delivery proof)
+  viewerModalVisible = signal(false);
+  viewerImagePath = signal<string | null>(null);
+  viewerError = signal<string | null>(null);
 
   readonly columns = computed<DayColumn[]>(() => {
     const start = new Date(this.startDate());
@@ -88,7 +103,8 @@ export class Dashboard implements OnInit, OnDestroy {
         const index = list.findIndex((o) => o.id === id);
         if (index === -1) return list;
         const updated = [...list];
-        updated[index] = { ...updated[index], status: m.status as OrderStatus };
+        // Preserve any existing imagePath unless the message includes a new one
+        updated[index] = { ...updated[index], status: m.status as OrderStatus, imagePath: m.imagePath ?? m.image_path ?? updated[index].imagePath };
         return updated;
       });
     } else {
@@ -102,6 +118,7 @@ export class Dashboard implements OnInit, OnDestroy {
         orderDate: m.orderDate,
         status: m.status as OrderStatus,
         items: m.items || [],
+        imagePath: m.imagePath ?? m.image_path ?? null,
       };
       this.orders.update((list) => {
         const index = list.findIndex((o) => o.id === card.id);
@@ -116,7 +133,28 @@ export class Dashboard implements OnInit, OnDestroy {
   pendingFor(id?: number): boolean {
     if (id == null) return false;
     const p = this.pending();
-    return !!p[id];
+    return p[id];
+  }
+
+  // Return whether the currently authenticated role is allowed to set the
+  // given status. Mapping according to requirements:
+  // - ADMIN, SALE: can set all statuses
+  // - STAFF: can set first three statuses (not 'จัดส่งแล้ว')
+  // - DELIVERY: can set only 'จัดส่งแล้ว'
+  canSetStatus(status: OrderStatus): boolean {
+    const role = this.auth.role();
+    if (!role) return false;
+    switch (role) {
+      case 'ADMIN':
+      case 'SALE':
+        return true;
+      case 'STAFF':
+        return status !== 'จัดส่งแล้ว';
+      case 'DELIVERY':
+        return status === 'จัดส่งแล้ว';
+      default:
+        return false;
+    }
   }
 
   // changeStatus(order: OrderCard, status: OrderStatus): void {
@@ -173,7 +211,32 @@ export class Dashboard implements OnInit, OnDestroy {
   }
 
   changeStatus(order: OrderCard, status: OrderStatus): void {
+    console.debug('changeStatus called', {
+      orderId: order.id,
+      current: order.status,
+      target: status,
+    });
+
+    // If clicking the same status and it's 'จัดส่งแล้ว' with imagePath, show the proof
+    if (order.status === status && order.imagePath) {
+      // Use server endpoint to fetch the proof instead of attempting to load local file:// URL
+      this.openViewerByOrderId(order.id);
+      return;
+    }
+
     if (order.status === status) {
+      console.debug('changeStatus aborted: status unchanged');
+      return;
+    }
+
+    // Disallow if current role cannot set the requested status
+    if (!this.canSetStatus(status)) {
+      return;
+    }
+    // If status is 'จัดส่งแล้ว' (delivered) require upload of proof file
+    if (status === 'จัดส่งแล้ว') {
+      console.debug('Opening upload modal for delivered status', { orderId: order.id });
+      this.openUploadModal(order);
       return;
     }
 
@@ -181,9 +244,7 @@ export class Dashboard implements OnInit, OnDestroy {
     const orderId = order.orderId;
 
     // Optimistic update: immediately update UI so user sees the change.
-    this.orders.update((list) =>
-      list.map((o) => (o.id === orderId ? { ...o, status } : o)),
-    );
+    this.orders.update((list) => list.map((o) => (o.id === orderId ? { ...o, status } : o)));
 
     // Mark pending so controls are disabled until the request finishes.
     this.pending.update((m) => ({ ...m, [orderId]: true }));
@@ -193,9 +254,7 @@ export class Dashboard implements OnInit, OnDestroy {
     this.orderService.updateStatus(orderId, status).subscribe({
       next: (card) => {
         // Update orders with the server response to ensure consistency
-        this.orders.update((list) =>
-          list.map((o) => (o.id === card.id ? card : o)),
-        );
+        this.orders.update((list) => list.map((o) => (o.id === card.id ? card : o)));
         this.pending.update((m) => {
           const copy = { ...m };
           delete copy[orderId];
@@ -216,4 +275,104 @@ export class Dashboard implements OnInit, OnDestroy {
     });
   }
 
+  // Open the upload modal for a specific order
+  private openUploadModal(order: OrderCard): void {
+    this.uploadOrderId.set(order.id);
+    this.uploadFile.set(null);
+    this.uploadPreviewUrl.set(null);
+    this.uploadModalVisible.set(true);
+    console.debug('uploadModalVisible set to true');
+  }
+
+  // Close modal and cleanup preview URL
+  closeUploadModal(): void {
+    const url = this.uploadPreviewUrl();
+    if (url) {
+      URL.revokeObjectURL(url);
+    }
+    this.uploadFile.set(null);
+    this.uploadPreviewUrl.set(null);
+    this.uploadOrderId.set(null);
+    this.uploadModalVisible.set(false);
+  }
+
+  // Handle file input change
+  onUploadFileChange(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files && input.files[0] ? input.files[0] : null;
+    const prev = this.uploadPreviewUrl();
+    if (prev) URL.revokeObjectURL(prev);
+    if (file) {
+      const url = URL.createObjectURL(file);
+      this.uploadFile.set(file);
+      this.uploadPreviewUrl.set(url);
+    } else {
+      this.uploadFile.set(null);
+      this.uploadPreviewUrl.set(null);
+    }
+  }
+
+  // Upload selected file and set status to 'จัดส่งแล้ว'
+  uploadConfirm(): void {
+    const orderId = this.uploadOrderId();
+    const file = this.uploadFile();
+    if (orderId == null || !file) return;
+
+    // mark pending
+    this.pending.update((m) => ({ ...m, [orderId]: true }));
+
+    const form = new FormData();
+    form.append('status', 'จัดส่งแล้ว');
+    form.append('file', file, file.name);
+
+    this.http.put<any>(`/api/dashboard/${orderId}/status`, form).subscribe({
+      next: (d) => {
+        const card = this.orderService['toCard'] ? this.orderService['toCard'](d) : d;
+        // Ensure we have an imagePath to view immediately after upload; if the
+        // server does not return a URL we can fall back to the local preview URL
+        // created by URL.createObjectURL(file). This only works for the current
+        // browser session but allows immediate viewing.
+        const effectiveCard = { ...card, imagePath: card.imagePath ?? card.image_path ?? this.uploadPreviewUrl() };
+        // Update orders with server response (merged)
+        this.orders.update((list) => list.map((o) => (o.id === effectiveCard.id ? effectiveCard : o)));
+        // cleanup
+        this.pending.update((m) => {
+          const copy = { ...m };
+          delete copy[orderId];
+          return copy;
+        });
+        this.closeUploadModal();
+      },
+      error: () => {
+        this.pending.update((m) => {
+          const copy = { ...m };
+          delete copy[orderId];
+          return copy;
+        });
+        this.closeUploadModal();
+      },
+    });
+  }
+
+  // Open viewer modal to display delivery proof
+  openViewerModal(imagePath: string | null): void {
+    if (!imagePath) return;
+    this.viewerError.set(null);
+    this.viewerImagePath.set(imagePath);
+    this.viewerModalVisible.set(true);
+  }
+
+  // Open viewer modal using server endpoint for the order's proof file
+  openViewerByOrderId(orderId: number): void {
+    this.viewerError.set(null);
+    this.viewerImagePath.set(`/api/dashboard/${orderId}/proof`);
+    this.viewerModalVisible.set(true);
+  }
+
+  // Close viewer modal
+  closeViewerModal(): void {
+    this.viewerImagePath.set(null);
+    this.viewerModalVisible.set(false);
+    this.viewerError.set(null);
+  }
 }

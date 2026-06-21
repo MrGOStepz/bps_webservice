@@ -49,6 +49,7 @@ export class OrderService {
       deliveryAddress: d.deliveryAddress,
       orderDate: d.orderDate,
       status: d.status,
+      imagePath: d.imagePath ?? null,
       items: d.items ?? [],
     } as OrderCard;
   }

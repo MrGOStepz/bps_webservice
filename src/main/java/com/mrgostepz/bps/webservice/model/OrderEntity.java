@@ -44,4 +44,8 @@ public class OrderEntity {
 
     @Column(name = "freeze_mode")
     private String freezeMode;
+
+    // Path to uploaded delivery proof (image or video)
+    @Column(name = "delivery_proof_path")
+    private String deliveryProofPath;
 }

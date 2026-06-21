@@ -19,5 +19,6 @@ public class OrderCard {
     private String deliveryAddress;
     private String orderDate;
     private String status;
+    private String imagePath;
     private List<OrderItemDto> items;
 }

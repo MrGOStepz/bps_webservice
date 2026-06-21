@@ -63,6 +63,26 @@ public class OrderService {
     }
 
     /**
+     * Update order status and attach a delivery proof path (image/video) if provided.
+     */
+    public Optional<OrderCard> updateStatusWithFile(Integer id, String status, String proofPath) {
+        return orderRepository.findById(id).map(order -> {
+            order.setStatus(status);
+            order.setDeliveryProofPath(proofPath);
+            OrderEntity saved = orderRepository.save(order);
+            messagingTemplate.convertAndSend(TOPIC_ORDERS, new StatusUpdate(saved.getOrderId(), saved.getStatus()));
+            return toCard(saved);
+        });
+    }
+
+    /**
+     * Return the stored delivery proof path (if any) for an order.
+     */
+    public Optional<String> getDeliveryProofPath(Integer id) {
+        return orderRepository.findById(id).map(OrderEntity::getDeliveryProofPath);
+    }
+
+    /**
      * Update order status and return the updated OrderEntity.
      * This is useful for API endpoints that need the raw entity rather than the dashboard card.
      */
@@ -111,6 +131,7 @@ public class OrderService {
                 order.getDeliveryAddress(),
                 order.getOrderDate(),
                 order.getStatus(),
+                order.getDeliveryProofPath(),
                 parseItems(order.getOrderDetailJson())
         );
     }
