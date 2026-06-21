@@ -303,13 +303,89 @@ export class Dashboard implements OnInit, OnDestroy {
     const prev = this.uploadPreviewUrl();
     if (prev) URL.revokeObjectURL(prev);
     if (file) {
-      const url = URL.createObjectURL(file);
-      this.uploadFile.set(file);
-      this.uploadPreviewUrl.set(url);
+      // If image, resize/compress before storing to reduce upload size.
+      if (file.type.startsWith('image/')) {
+        this.resizeImageFile(file, 1280, 0.8)
+          .then((resized) => {
+            const blob = resized ?? file;
+            const url = URL.createObjectURL(blob);
+            // Keep the original filename when possible
+            const finalFile = resized ?? file;
+            this.uploadFile.set(finalFile as File);
+            this.uploadPreviewUrl.set(url);
+          })
+          .catch((err) => {
+            console.debug('Image resize failed, falling back to original file', err);
+            const url = URL.createObjectURL(file);
+            this.uploadFile.set(file);
+            this.uploadPreviewUrl.set(url);
+          });
+      } else {
+        const url = URL.createObjectURL(file);
+        this.uploadFile.set(file);
+        this.uploadPreviewUrl.set(url);
+      }
     } else {
       this.uploadFile.set(null);
       this.uploadPreviewUrl.set(null);
     }
+  }
+
+  // Resize an image File using canvas. Returns a new File (Blob) or null on failure.
+  private resizeImageFile(file: File, maxDim = 1280, quality = 0.8): Promise<File | null> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        try {
+          const iw = img.naturalWidth;
+          const ih = img.naturalHeight;
+          let w = iw;
+          let h = ih;
+          if (maxDim > 0 && (iw > maxDim || ih > maxDim)) {
+            if (iw > ih) {
+              w = maxDim;
+              h = Math.round((ih * maxDim) / iw);
+            } else {
+              h = maxDim;
+              w = Math.round((iw * maxDim) / ih);
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            URL.revokeObjectURL(url);
+            resolve(null);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, w, h);
+          canvas.toBlob(
+            (blob) => {
+              URL.revokeObjectURL(url);
+              if (!blob) {
+                resolve(null);
+                return;
+              }
+              const newFile = new File([blob], file.name, { type: blob.type || 'image/jpeg' });
+              resolve(newFile);
+            },
+            'image/jpeg',
+            quality,
+          );
+        } catch (e) {
+          URL.revokeObjectURL(url);
+          reject(e);
+        }
+      };
+      img.onerror = (e) => {
+        URL.revokeObjectURL(url);
+        reject(e);
+      };
+      img.src = url;
+    });
   }
 
   // Upload selected file and set status to 'จัดส่งแล้ว'
