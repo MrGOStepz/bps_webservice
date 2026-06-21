@@ -36,6 +36,7 @@ export type OrderStatus = 'กำลังผลิต' | 'ผลิตเสร
 
 export interface OrderCard {
   id: number;
+  orderId: number;
   customerId: number;
   customerName: string;
   deliveryAddress: string;

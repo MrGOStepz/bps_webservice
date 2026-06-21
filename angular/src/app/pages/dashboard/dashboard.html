@@ -14,7 +14,10 @@
           <div class="card order-card mb-2 shadow-sm">
             <div class="card-body p-2">
               <div class="d-flex justify-content-between align-items-start">
-                <strong>{{ order.customerName }}</strong>
+                <strong>
+                  {{ order.customerName }}
+                  <span *ngIf="pendingFor(order.id)" class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
+                </strong>
                 <span class="badge" [class]="statusClass(order.status)">{{ order.status }}</span>
               </div>
               <div class="small text-muted">{{ order.deliveryAddress }}</div>
@@ -29,6 +32,7 @@
                     type="button"
                     [class]="btnClass(order, s)"
                     (click)="changeStatus(order, s)"
+                    [disabled]="pendingFor(order.id)"
                   >
                     {{ s }}
                   </button>

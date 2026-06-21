@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { OrderService } from '../../services/order.service';
 import { WebSocketService } from '../../services/websocket.service';
@@ -14,7 +14,9 @@ interface DayColumn {
   selector: 'app-dashboard',
   imports: [],
   templateUrl: './dashboard.html',
-  styleUrl: './dashboard.scss',
+  // Angular expects `styleUrls` (plural)
+  styleUrls: ['./dashboard.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Dashboard implements OnInit, OnDestroy {
   private orderService = inject(OrderService);
@@ -24,6 +26,9 @@ export class Dashboard implements OnInit, OnDestroy {
   readonly statuses = ORDER_STATUSES;
   private startDate = signal(new Date().toISOString().substring(0, 10));
   private orders = signal<OrderCard[]>([]);
+  // Track pending status updates per-order so we can disable controls while an
+  // update is in-flight and show a small spinner.
+  private pending = signal<Record<number, boolean>>({});
 
   readonly columns = computed<DayColumn[]>(() => {
     const start = new Date(this.startDate());
@@ -59,24 +64,59 @@ export class Dashboard implements OnInit, OnDestroy {
   }
 
   private handleMessage(msg: unknown): void {
-    const m = msg as Partial<OrderCard> & Partial<StatusUpdate>;
-    if (m.id == null) {
+    const m = msg as any;
+    // Normalize id (server may send `id` for StatusUpdate or `orderId` for OrderCard)
+    const id = m.id ?? m.orderId;
+    if (id == null) {
       return;
     }
-    const existing = this.orders().find((o) => o.id === m.id);
-    if (existing && !('items' in m && m.items)) {
-      // Status update only.
-      this.orders.update((list) =>
-        list.map((o) => (o.id === m.id ? { ...o, status: m.status as OrderStatus } : o)),
-      );
-    } else if ('items' in m && m.items) {
-      // Full new/updated order card.
-      const card = msg as OrderCard;
+
+    // Skip websocket updates for orders that have a pending API call
+    const p = this.pending();
+    if (p[id]) {
+      return;
+    }
+
+    const existing = this.orders().find((o) => o.id === id);
+    if (!existing) {
+      return; // Order doesn't exist locally, ignore message
+    }
+
+    if (!('items' in m && m.items)) {
+      // Status update only - update only the matching order
       this.orders.update((list) => {
-        const others = list.filter((o) => o.id !== card.id);
-        return [...others, card];
+        const index = list.findIndex((o) => o.id === id);
+        if (index === -1) return list;
+        const updated = [...list];
+        updated[index] = { ...updated[index], status: m.status as OrderStatus };
+        return updated;
+      });
+    } else {
+      // Full card - map fields and replace the matching order
+      const card: OrderCard = {
+        id,
+        orderId: id,
+        customerId: m.customerId,
+        customerName: m.customerName,
+        deliveryAddress: m.deliveryAddress,
+        orderDate: m.orderDate,
+        status: m.status as OrderStatus,
+        items: m.items || [],
+      };
+      this.orders.update((list) => {
+        const index = list.findIndex((o) => o.id === card.id);
+        if (index === -1) return list;
+        const updated = [...list];
+        updated[index] = card;
+        return updated;
       });
     }
+  }
+
+  pendingFor(id?: number): boolean {
+    if (id == null) return false;
+    const p = this.pending();
+    return !!p[id];
   }
 
   // changeStatus(order: OrderCard, status: OrderStatus): void {
@@ -138,27 +178,40 @@ export class Dashboard implements OnInit, OnDestroy {
     }
 
     const oldStatus = order.status;
+    const orderId = order.orderId;
 
     // Optimistic update: immediately update UI so user sees the change.
     this.orders.update((list) =>
-      list.map((o) => (o.id === order.id ? { ...o, status } : o)),
+      list.map((o) => (o.id === orderId ? { ...o, status } : o)),
     );
 
-    // Send the update to server. On success, reconcile with server response (replace card).
+    // Mark pending so controls are disabled until the request finishes.
+    this.pending.update((m) => ({ ...m, [orderId]: true }));
+
+    // Send the update to server. On success, update with server response.
     // On error, revert the optimistic change.
-    this.orderService.updateStatus(order.id, status).subscribe({
+    this.orderService.updateStatus(orderId, status).subscribe({
       next: (card) => {
-        // server may return the full OrderCard; replace local card with server copy
-        this.orders.update((list) => {
-          const others = list.filter((o) => o.id !== card.id);
-          return [...others, card];
+        // Update orders with the server response to ensure consistency
+        this.orders.update((list) =>
+          list.map((o) => (o.id === card.id ? card : o)),
+        );
+        this.pending.update((m) => {
+          const copy = { ...m };
+          delete copy[orderId];
+          return copy;
         });
       },
       error: () => {
         // revert to previous status on failure
         this.orders.update((list) =>
-          list.map((o) => (o.id === order.id ? { ...o, status: oldStatus } : o)),
+          list.map((o) => (o.id === orderId ? { ...o, status: oldStatus } : o)),
         );
+        this.pending.update((m) => {
+          const copy = { ...m };
+          delete copy[orderId];
+          return copy;
+        });
       },
     });
   }
