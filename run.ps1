@@ -9,11 +9,18 @@ Usage:
   .\run.ps1 -BackendOnly   # only run Spring Boot
   .\run.ps1 -OpenWindows:$false  # run in the same console instead of opening new windows
 
+Access Points (Dev Mode):
+  Local:     http://localhost:4200           (Angular dev server)
+             http://localhost:8080           (Spring Boot backend)
+  Remote:    http://mrgostepz.thddns.net:5851 (port mapping: 5852 → 4200)
+
 Notes:
 - Designed for Windows PowerShell (powershell.exe) and to be run from repository root.
 - Requires Java (matching Gradle toolchain) and Node/npm installed for Angular.
+- Angular dev server listens on all network interfaces (0.0.0.0:4200) for remote access.
 - In `prod` mode the Angular dist (dist/angular) is copied into Spring Boot's
   `src/main/resources/static` so Spring serves the built frontend.
+- Port mapping configured: external port 5852 → internal port 4200 (Angular).
 #>
 
 param(
@@ -56,6 +63,7 @@ if ($FrontendOnly -and $BackendOnly) {
 if ($Mode -eq 'dev') {
     if (-not $BackendOnly) {
         Write-Host "Starting Spring Boot (bootRun) in dev mode..."
+        Write-Host "Backend available at: http://localhost:8080"
         $backendCommand = "Set-Location -LiteralPath '$BackendPath'; & '.\gradlew.bat' bootRun"
         if ($OpenWindows) {
             Start-Process -FilePath 'powershell.exe' -ArgumentList '-NoExit', '-Command', $backendCommand -WorkingDirectory $BackendPath
@@ -67,6 +75,9 @@ if ($Mode -eq 'dev') {
 
     if (-not $FrontendOnly) {
         Write-Host "Starting Angular dev server (npm start)..."
+        Write-Host "Angular available at:"
+        Write-Host "  Local:  http://localhost:4200"
+        Write-Host "  Remote: http://mrgostepz.thddns.net:5851 (DDNS with port mapping 5851→4200)"
         if (-not $NoInstall) {
             if (-not (Test-Path (Join-Path $AngularPath 'node_modules'))) {
                 Write-Host "node_modules not found, running npm install in $AngularPath..."
