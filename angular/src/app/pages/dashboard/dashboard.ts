@@ -79,12 +79,12 @@ export class Dashboard implements OnInit, OnDestroy {
     }
   }
 
-  changeStatus(order: OrderCard, status: OrderStatus): void {
-    if (order.status === status) {
-      return;
-    }
-    this.orderService.updateStatus(order.id, status).subscribe();
-  }
+  // changeStatus(order: OrderCard, status: OrderStatus): void {
+  //   if (order.status === status) {
+  //     return;
+  //   }
+  //   this.orderService.updateStatus(order.id, status).subscribe();
+  // }
 
   statusClass(status: OrderStatus): string {
     switch (status) {
@@ -132,5 +132,35 @@ export class Dashboard implements OnInit, OnDestroy {
     return cls;
   }
 
+  changeStatus(order: OrderCard, status: OrderStatus): void {
+    if (order.status === status) {
+      return;
+    }
+
+    const oldStatus = order.status;
+
+    // Optimistic update: immediately update UI so user sees the change.
+    this.orders.update((list) =>
+      list.map((o) => (o.id === order.id ? { ...o, status } : o)),
+    );
+
+    // Send the update to server. On success, reconcile with server response (replace card).
+    // On error, revert the optimistic change.
+    this.orderService.updateStatus(order.id, status).subscribe({
+      next: (card) => {
+        // server may return the full OrderCard; replace local card with server copy
+        this.orders.update((list) => {
+          const others = list.filter((o) => o.id !== card.id);
+          return [...others, card];
+        });
+      },
+      error: () => {
+        // revert to previous status on failure
+        this.orders.update((list) =>
+          list.map((o) => (o.id === order.id ? { ...o, status: oldStatus } : o)),
+        );
+      },
+    });
+  }
 
 }

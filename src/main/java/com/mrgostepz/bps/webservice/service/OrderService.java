@@ -44,7 +44,9 @@ public class OrderService {
         order.setCustomerId(request.getCustomerId());
         order.setDeliveryAddress(request.getDeliveryAddress());
         order.setOrderDate(request.getOrderDate());
-        order.setStatus(OrderStatus.PROCESSING.toString());
+        order.setDeliveryMode(request.getDeliveryMode());
+        order.setFreezeMode(request.getFreezeMode());
+        order.setStatus(OrderStatus.PROCESSING.getOrderStatus());
         order.setOrderDetailJson(writeDetailJson(request));
         OrderEntity saved = orderRepository.save(order);
         messagingTemplate.convertAndSend(TOPIC_ORDERS, toCard(saved));
@@ -57,6 +59,19 @@ public class OrderService {
             OrderEntity saved = orderRepository.save(order);
             messagingTemplate.convertAndSend(TOPIC_ORDERS, new StatusUpdate(saved.getOrderId(), saved.getStatus()));
             return toCard(saved);
+        });
+    }
+
+    /**
+     * Update order status and return the updated OrderEntity.
+     * This is useful for API endpoints that need the raw entity rather than the dashboard card.
+     */
+    public Optional<OrderEntity> updateStatusEntity(Integer id, String status) {
+        return orderRepository.findById(id).map(order -> {
+            order.setStatus(status);
+            OrderEntity saved = orderRepository.save(order);
+            messagingTemplate.convertAndSend(TOPIC_ORDERS, new StatusUpdate(saved.getOrderId(), saved.getStatus()));
+            return saved;
         });
     }
 
@@ -125,7 +140,7 @@ public class OrderService {
             );
             return objectMapper.writeValueAsString(detail);
         } catch (Exception e) {
-            return "{}";
+            return "{+" + e.getMessage() + "}";
         }
     }
 }

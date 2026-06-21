@@ -11,5 +11,7 @@ public class OrderRequest {
     private String location;
     private String note;
     private String orderDate;
+    private String freezeMode;
+    private String deliveryMode;
     private List<OrderItemDto> items;
 }

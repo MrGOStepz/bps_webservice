@@ -7,17 +7,20 @@ import { Customer, OrderItem } from '../../models/models';
 @Component({
   selector: 'app-form',
   imports: [FormsModule],
-  templateUrl: './form.html'
+  templateUrl: './form.html',
 })
 export class FormPage implements OnInit {
   private customerService = inject(CustomerService);
   private orderService = inject(OrderService);
 
   customers = signal<Customer[]>([]);
-  search = signal('');
   selectedCustomerId = signal<number | null>(null);
   address = signal('');
+  search = signal('');
   location = signal('');
+  phone = signal('');
+  freezeMode = signal('ละลาย');
+  deliveryMode = signal('ขนส่ง');
   note = signal('');
   items = signal<OrderItem[]>([{ name: '', quantity: '1' }]);
   message = signal<string | null>(null);
@@ -28,7 +31,9 @@ export class FormPage implements OnInit {
   }
 
   loadCustomers(): void {
-    this.customerService.list(this.search() || undefined).subscribe((list) => this.customers.set(list));
+    this.customerService
+      .list(this.search() || undefined)
+      .subscribe((list) => this.customers.set(list));
   }
 
   onCustomerChange(id: string): void {
@@ -38,6 +43,7 @@ export class FormPage implements OnInit {
     if (customer) {
       this.address.set(customer.address);
       this.location.set(customer.location);
+      this.phone.set(customer.phone);
     }
     if (customerId != null) {
       this.orderService.latestItems(customerId).subscribe((items) => {
@@ -58,7 +64,7 @@ export class FormPage implements OnInit {
 
   updateItem(index: number, field: 'name' | 'quantity', value: string): void {
     this.items.update((list) =>
-      list.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+      list.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
     );
   }
 
@@ -75,21 +81,29 @@ export class FormPage implements OnInit {
         customerId,
         deliveryAddress: this.address(),
         location: this.location(),
+        phone: this.phone(),
+        freezeMode: this.freezeMode(),
+        deliveryMode: this.deliveryMode(),
         note: this.note(),
         orderDate: new Date().toISOString().substring(0, 10),
-        items: this.items().filter((i) => i.name.trim().length > 0)
+        items: this.items().filter((i) => i.name.trim().length > 0),
       })
       .subscribe({
         next: () => {
           this.saving.set(false);
           this.message.set('Order submitted successfully');
+          this.address.set('');
+          this.location.set('');
+          this.phone.set('');
+          this.deliveryMode.set('ขนส่ง');
+          this.freezeMode.set('ละลาย');
           this.items.set([{ name: '', quantity: '1' }]);
           this.note.set('');
         },
         error: () => {
           this.saving.set(false);
           this.message.set('Failed to submit order');
-        }
+        },
       });
   }
 }

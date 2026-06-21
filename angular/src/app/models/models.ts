@@ -26,6 +26,9 @@ export interface OrderRequest {
   location: string;
   note: string;
   orderDate: string;
+  phone: string;
+  freezeMode: string;
+  deliveryMode: string;
   items: OrderItem[];
 }
 

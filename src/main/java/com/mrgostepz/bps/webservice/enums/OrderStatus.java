@@ -4,8 +4,7 @@ public enum OrderStatus {
     PROCESSING("กำลังผลิต"),
     DONE("ผลิตเสร็จแล้ว"),
     DELIVERING("กำลังส่ง"),
-    SHIPPED("จัดส่งแล้ว"),
-    CANCELLED("ยกเลิก");
+    SHIPPED("จัดส่งแล้ว");
 
     private final String orderStatus;
 

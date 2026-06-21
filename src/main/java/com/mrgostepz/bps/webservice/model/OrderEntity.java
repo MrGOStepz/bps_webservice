@@ -36,9 +36,12 @@ public class OrderEntity {
     @Column(name = "order_date")
     private String orderDate;
 
-    /**
-     * Order status, one of: NEW, PREPARING, DELIVERING, DONE.
-     */
     @Column(name = "status")
     private String status;
+
+    @Column(name = "delivery_mode")
+    private String deliveryMode;
+
+    @Column(name = "freeze_mode")
+    private String freezeMode;
 }
