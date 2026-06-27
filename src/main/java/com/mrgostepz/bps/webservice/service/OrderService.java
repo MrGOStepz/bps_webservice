@@ -44,6 +44,7 @@ public class OrderService {
         order.setCustomerId(request.getCustomerId());
         order.setDeliveryAddress(request.getDeliveryAddress());
         order.setOrderDate(request.getOrderDate());
+        order.setNote(request.getNote());
         order.setDeliveryMode(request.getDeliveryMode());
         order.setFreezeMode(request.getFreezeMode());
         order.setStatus(OrderStatus.PROCESSING.getOrderStatus());
@@ -121,14 +122,16 @@ public class OrderService {
     }
 
     private OrderCard toCard(OrderEntity order) {
-        String customerName = customerRepository.findById(order.getCustomerId())
-                .map(Customer::getName)
-                .orElse("Unknown");
+        Customer customerName = customerRepository.findById(order.getCustomerId()).orElse(null);
         return new OrderCard(
                 order.getOrderId(),
                 order.getCustomerId(),
-                customerName,
+                customerName == null ? "Unknown" : customerName.getName(),
+                customerName == null ? "Unknown" : customerName.getPhone(),
                 order.getDeliveryAddress(),
+                order.getNote(),
+                order.getFreezeMode(),
+                order.getDeliveryMode(),
                 order.getOrderDate(),
                 order.getStatus(),
                 order.getDeliveryProofPath(),

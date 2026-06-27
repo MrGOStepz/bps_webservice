@@ -33,6 +33,9 @@ public class OrderEntity {
     @Column(name = "delivery_address")
     private String deliveryAddress;
 
+    @Column(name = "note")
+    private String note;
+
     @Column(name = "order_date")
     private String orderDate;
 

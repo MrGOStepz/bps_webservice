@@ -75,13 +75,35 @@
               <div class="d-flex justify-content-between align-items-start">
                 <strong>
                   {{ order.customerName }}
+                  @if (order.deliveryMode === 'ส่งเอง') {
+                    <i class="bi bi-person" style="font-size: 1.2rem; color: #6c757d; margin-right: 0.5rem;"></i>
+                  } @else if (order.deliveryMode === 'ขนส่ง') {
+                    <i class="bi bi-car-front" style="font-size: 1.2rem; color: #6c757d; margin-right: 0.5rem;"></i>
+                  }
+                  <a
+                    [href]="order.deliveryAddress"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Open location"
+                    style="display: inline-block; cursor: pointer; margin-right: 0.5rem;"
+                  >
+                    <i class="bi bi-map" style="font-size: 1.2rem; color: #6c757d;"></i>
+                  </a>
                   @if (pendingFor(order.id)) {
                     <span class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
                   }
                 </strong>
-                <span class="badge" [class]="statusClass(order.status)">{{ order.status }}</span>
+                <strong>
+                <div class="text-end">
+                  <div class="text-muted">{{ order.id }}</div>
+                  <span class="badge" [class]="statusClass(order.status)">{{ order.status }}</span>
+                </div>
+                </strong>
               </div>
-              <div class="small text-muted">{{ order.deliveryAddress }}</div>
+              <div class="small text-muted">โทรศัพท์: {{ order.phone }}</div>
+              <div class="small text-muted">หมายเหตุ: {{ order.note }}</div>
+              <div class="small" style="color: red;">แบบ: {{ order.freezeMode }}</div>
+              <div class="small text-muted">สินค้า:</div>
               <ul class="small mb-2 ps-3">
                 @for (item of order.items; track $index) {
                   <li>{{ item.name }} × {{ item.quantity }}</li>

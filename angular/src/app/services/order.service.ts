@@ -47,10 +47,14 @@ export class OrderService {
       customerId: d.customerId,
       customerName: d.customerName,
       deliveryAddress: d.deliveryAddress,
+      note: d.note,
+      phone: d.phone,
+      freezeMode: d.freezeMode,
+      deliveryMode: d.deliveryMode,
       orderDate: d.orderDate,
       status: d.status,
       imagePath: d.imagePath ?? null,
       items: d.items ?? [],
-    } as OrderCard;
+    };
   }
 }

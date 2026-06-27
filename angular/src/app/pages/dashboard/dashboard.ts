@@ -116,6 +116,10 @@ export class Dashboard implements OnInit, OnDestroy {
         customerName: m.customerName,
         deliveryAddress: m.deliveryAddress,
         orderDate: m.orderDate,
+        note: m.note,
+        phone: m.phone,
+        freezeMode: m.freezeMode,
+        deliveryMode: m.deliveryMode,
         status: m.status as OrderStatus,
         items: m.items || [],
         imagePath: m.imagePath ?? m.image_path ?? null,
@@ -146,7 +150,6 @@ export class Dashboard implements OnInit, OnDestroy {
     if (!role) return false;
     switch (role) {
       case 'ADMIN':
-      case 'SALE':
         return true;
       case 'STAFF':
         return status !== 'จัดส่งแล้ว';

@@ -22,11 +22,14 @@ export class FormPage implements OnInit {
   freezeMode = signal('ละลาย');
   deliveryMode = signal('ขนส่ง');
   note = signal('');
+  orderDate = signal('');
   items = signal<OrderItem[]>([{ name: '', quantity: '1' }]);
   message = signal<string | null>(null);
   saving = signal(false);
 
   ngOnInit(): void {
+    const today = new Date().toISOString().substring(0, 10);
+    this.orderDate.set(today);
     this.loadCustomers();
   }
 
@@ -85,7 +88,7 @@ export class FormPage implements OnInit {
         freezeMode: this.freezeMode(),
         deliveryMode: this.deliveryMode(),
         note: this.note(),
-        orderDate: new Date().toISOString().substring(0, 10),
+        orderDate: this.orderDate(),
         items: this.items().filter((i) => i.name.trim().length > 0),
       })
       .subscribe({

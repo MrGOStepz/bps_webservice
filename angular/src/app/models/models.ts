@@ -42,6 +42,10 @@ export interface OrderCard {
   deliveryAddress: string;
   orderDate: string;
   status: OrderStatus;
+  note: string;
+  phone: string;
+  freezeMode: string;
+  deliveryMode: string;
   items: OrderItem[];
   imagePath?: string | null;
 }

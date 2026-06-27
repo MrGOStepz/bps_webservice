@@ -63,7 +63,7 @@ export class AuthService {
       case 'dashboard':
         return role === 'ADMIN' || role === 'SALE' || role === 'STAFF' || role === 'DELIVERY';
       case 'history':
-        return role === 'ADMIN';
+        return role === 'ADMIN' || role === 'SALE';
       case 'customer':
         return role === 'ADMIN';
       default:

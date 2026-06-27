@@ -16,7 +16,11 @@ public class OrderCard {
     private Integer orderId;
     private Integer customerId;
     private String customerName;
+    private String phone;
     private String deliveryAddress;
+    private String note;
+    private String freezeMode;
+    private String deliveryMode;
     private String orderDate;
     private String status;
     private String imagePath;
