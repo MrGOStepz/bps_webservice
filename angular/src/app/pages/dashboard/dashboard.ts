@@ -26,6 +26,7 @@ export class Dashboard implements OnInit, OnDestroy {
   private auth = inject(AuthService);
   private http = inject(HttpClient);
   private sub?: Subscription;
+  private newOrderSub?: Subscription;
 
   readonly statuses = ORDER_STATUSES;
   private startDate = signal(new Date().toISOString().substring(0, 10));
@@ -68,10 +69,13 @@ export class Dashboard implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.load();
     this.sub = this.ws.connect().subscribe((msg) => this.handleMessage(msg));
+    // Also listen for orders created via the form so the dashboard updates without page refresh
+    this.newOrderSub = this.orderService.newOrder$.subscribe((card) => this.addOrder(card));
   }
 
   ngOnDestroy(): void {
     this.sub?.unsubscribe();
+    this.newOrderSub?.unsubscribe();
   }
 
   load(): void {
@@ -132,6 +136,18 @@ export class Dashboard implements OnInit, OnDestroy {
         return updated;
       });
     }
+  }
+
+  private addOrder(card: OrderCard): void {
+    if (!card || !card.orderDate) return;
+    const start = new Date(this.startDate()).toISOString().substring(0, 10);
+    const end = new Date(new Date(this.startDate()).setDate(new Date(this.startDate()).getDate() + 6)).toISOString().substring(0, 10);
+    const od = card.orderDate;
+    if (od < start || od > end) return;
+    this.orders.update((list) => {
+      if (list.find((o) => o.id === card.id)) return list;
+      return [...list, card];
+    });
   }
 
   pendingFor(id?: number): boolean {

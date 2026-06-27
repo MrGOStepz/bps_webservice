@@ -92,9 +92,15 @@ export class FormPage implements OnInit {
         items: this.items().filter((i) => i.name.trim().length > 0),
       })
       .subscribe({
-        next: () => {
+        next: (card) => {
           this.saving.set(false);
           this.message.set('Order submitted successfully');
+          // Notify dashboard (and other listeners) about the new order so UI updates without refresh
+          try {
+            this.orderService.newOrder.next(card as any);
+          } catch (e) {
+            console.debug('Could not notify newOrder listeners', e);
+          }
           this.address.set('');
           this.location.set('');
           this.phone.set('');

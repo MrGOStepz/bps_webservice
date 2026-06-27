@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { OrderCard, OrderItem, OrderRequest, OrderStatus } from '../models/models';
 
@@ -8,8 +8,12 @@ import { OrderCard, OrderItem, OrderRequest, OrderStatus } from '../models/model
 export class OrderService {
   private http = inject(HttpClient);
 
-  createOrder(request: OrderRequest): Observable<unknown> {
-    return this.http.post('/api/form/order', request);
+  // Emits newly created orders so UI can update without a full refresh
+  public newOrder: Subject<OrderCard> = new Subject<OrderCard>();
+  public newOrder$ = this.newOrder.asObservable();
+
+  createOrder(request: OrderRequest): Observable<OrderCard> {
+    return this.http.post<any>('/api/form/order', request).pipe(map((d) => this.toCard(d)));
   }
 
   latestItems(customerId: number): Observable<OrderItem[]> {
