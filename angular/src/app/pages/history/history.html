@@ -42,6 +42,32 @@
   </div>
 </div>
 
+@if (viewerModalVisible()) {
+  <div class="modal-backdrop d-flex align-items-center justify-content-center">
+    <div class="card" style="width: 520px; max-width: 95%;">
+      <div class="card-body">
+        <h5 class="card-title">Delivery Proof</h5>
+        <div class="mb-3 text-center">
+          @if (viewerError()) {
+            <div class="alert alert-warning" role="alert">{{ viewerError() }}</div>
+          } @else {
+            @if (viewerImagePath()) {
+              @if (viewerImagePath()!.endsWith('.mp4') || viewerImagePath()!.endsWith('.webm') || viewerImagePath()!.endsWith('.mov')) {
+                <video [src]="viewerImagePath()" controls style="max-width:100%; max-height:400px;"></video>
+              } @else {
+                <img [src]="viewerImagePath()" alt="Delivery proof" style="max-width:100%; max-height:400px;" />
+              }
+            }
+          }
+        </div>
+        <div class="d-flex justify-content-end">
+          <button class="btn btn-sm btn-secondary" (click)="closeViewerModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
 <div class="card shadow-sm">
   <div class="table-responsive">
     <table class="table table-striped mb-0">
@@ -52,6 +78,7 @@
           <th>Customer</th>
           <th>Address</th>
           <th>Items</th>
+          <th>Image</th>
           <th>Status</th>
         </tr>
       </thead>
@@ -67,11 +94,18 @@
                 <span class="badge bg-light text-dark me-1">{{ item.name }} × {{ item.quantity }}</span>
               }
             </td>
+            <td>
+              @if (order.imagePath) {
+                <a href="#" (click)="viewImage(order); $event.preventDefault()">{{ imgName(order.imagePath) }} (View)</a>
+              } @else {
+                -
+              }
+            </td>
             <td>{{ order.status }}</td>
           </tr>
         } @empty {
           <tr>
-            <td colspan="6" class="text-center text-muted py-3">
+            <td colspan="7" class="text-center text-muted py-3">
               {{ searched() ? 'No results found' : 'Use the filter above to search' }}
             </td>
           </tr>

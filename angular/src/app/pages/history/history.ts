@@ -20,6 +20,11 @@ export class History implements OnInit {
   results = signal<OrderCard[]>([]);
   searched = signal(false);
 
+  // Viewer modal state
+  viewerModalVisible = signal(false);
+  viewerImagePath = signal<string | null>(null);
+  viewerError = signal<string | null>(null);
+
   ngOnInit(): void {
     const today = new Date();
     const weekAgo = new Date();
@@ -36,5 +41,41 @@ export class History implements OnInit {
         this.results.set(data);
         this.searched.set(true);
       });
+  }
+
+  viewImage(order: OrderCard): void {
+    if (!order.imagePath) return;
+    const p = order.imagePath;
+    if (p.startsWith('blob:') || p.startsWith('data:') || p.startsWith('http') || p.startsWith('/api')) {
+      this.openViewerModal(p);
+    } else {
+      // Do not expose local file:// paths; use server endpoint by order id
+      this.openViewerByOrderId(order.id);
+    }
+  }
+
+  openViewerModal(imagePath: string | null): void {
+    if (!imagePath) return;
+    this.viewerError.set(null);
+    this.viewerImagePath.set(imagePath);
+    this.viewerModalVisible.set(true);
+  }
+
+  openViewerByOrderId(orderId: number): void {
+    this.viewerError.set(null);
+    this.viewerImagePath.set(`/api/dashboard/${orderId}/proof`);
+    this.viewerModalVisible.set(true);
+  }
+
+  closeViewerModal(): void {
+    this.viewerImagePath.set(null);
+    this.viewerModalVisible.set(false);
+    this.viewerError.set(null);
+  }
+
+  imgName(path: string | null): string {
+    if (!path) return '';
+    const parts = path.split(/[/\\\\]/);
+    return parts[parts.length - 1];
   }
 }
