@@ -8,6 +8,7 @@ import com.mrgostepz.bps.webservice.dto.OrderRequest;
 import com.mrgostepz.bps.webservice.dto.StatusUpdate;
 import com.mrgostepz.bps.webservice.enums.OrderStatus;
 import com.mrgostepz.bps.webservice.model.Customer;
+import com.mrgostepz.bps.webservice.model.LatestItem;
 import com.mrgostepz.bps.webservice.model.OrderEntity;
 import com.mrgostepz.bps.webservice.repository.CustomerRepository;
 import com.mrgostepz.bps.webservice.repository.OrderRepository;
@@ -112,13 +113,13 @@ public class OrderService {
         return orders.stream().map(this::toCard).toList();
     }
 
-    public List<OrderItemDto> latestItems(Integer customerId) {
+    public LatestItem latestItems(Integer customerId) {
         List<OrderEntity> orders = orderRepository.findByCustomerId(customerId);
         if (orders.isEmpty()) {
-            return List.of();
+            return new LatestItem();
         }
         OrderEntity latest = orders.get(orders.size() - 1);
-        return parseItems(latest.getOrderDetailJson());
+        return parseLatestItems(latest.getOrderDetailJson());
     }
 
     private OrderCard toCard(OrderEntity order) {
@@ -152,6 +153,23 @@ public class OrderService {
             return objectMapper.convertValue(items, new TypeReference<List<OrderItemDto>>() {});
         } catch (Exception e) {
             return new ArrayList<>();
+        }
+    }
+
+    private LatestItem parseLatestItems(String json) {
+        if (json == null || json.isBlank()) {
+            return new LatestItem();
+        }
+        try {
+            Map<String, Object> detail = objectMapper.readValue(json, new TypeReference<>() {});
+            Object items = detail.get("items");
+            if (items == null) {
+                return new LatestItem();
+            }
+            List<OrderItemDto> orderItemDtos = objectMapper.convertValue(items, new TypeReference<List<OrderItemDto>>() {});
+            return new LatestItem(orderItemDtos, (String) detail.get("note"));
+        } catch (Exception e) {
+            return new LatestItem();
         }
     }
 

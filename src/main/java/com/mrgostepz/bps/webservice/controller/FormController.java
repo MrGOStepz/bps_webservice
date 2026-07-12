@@ -1,7 +1,7 @@
 package com.mrgostepz.bps.webservice.controller;
 
-import com.mrgostepz.bps.webservice.dto.OrderItemDto;
 import com.mrgostepz.bps.webservice.dto.OrderRequest;
+import com.mrgostepz.bps.webservice.model.LatestItem;
 import com.mrgostepz.bps.webservice.model.OrderEntity;
 import com.mrgostepz.bps.webservice.service.OrderService;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 
 /**
  * Handles the Form Page: creating ORDER records and retrieving the latest
@@ -34,7 +33,7 @@ public class FormController {
     }
 
     @GetMapping("/latest-items")
-    public List<OrderItemDto> latestItems(@RequestParam Integer customerId) {
+    public LatestItem latestItems(@RequestParam Integer customerId) {
         return orderService.latestItems(customerId);
     }
 }

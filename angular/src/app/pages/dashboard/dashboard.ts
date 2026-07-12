@@ -168,9 +168,11 @@ export class Dashboard implements OnInit, OnDestroy {
       case 'ADMIN':
         return true;
       case 'STAFF':
-        return status !== 'จัดส่งแล้ว';
+        // STAFF can set only 'กำลังผลิต' and 'ผลิตเสร็จแล้ว'
+        return status === 'กำลังผลิต' || status === 'ผลิตเสร็จแล้ว';
       case 'DELIVERY':
-        return status === 'จัดส่งแล้ว';
+        // DELIVERY can set 'กำลังส่ง' and 'จัดส่งแล้ว'
+        return status === 'กำลังส่ง' || status === 'จัดส่งแล้ว';
       default:
         return false;
     }

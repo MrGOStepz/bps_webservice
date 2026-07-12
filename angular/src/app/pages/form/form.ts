@@ -1,8 +1,8 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CustomerService } from '../../services/customer.service';
 import { OrderService } from '../../services/order.service';
-import { Customer, OrderItem } from '../../models/models';
+import { Customer, LatestItem, OrderItem } from '../../models/models';
 
 @Component({
   selector: 'app-form',
@@ -27,6 +27,16 @@ export class FormPage implements OnInit {
   message = signal<string | null>(null);
   saving = signal(false);
 
+  filteredCustomers = computed(() => {
+    const searchText = this.search().toLowerCase().trim();
+    if (!searchText) return this.customers();
+    return this.customers().filter(
+      (c) =>
+        c.name.toLowerCase().includes(searchText) ||
+        (c.customerId ?? 'NULL').toString().toLowerCase().includes(searchText),
+    );
+  });
+
   ngOnInit(): void {
     const today = new Date().toISOString().substring(0, 10);
     this.orderDate.set(today);
@@ -49,9 +59,12 @@ export class FormPage implements OnInit {
       this.phone.set(customer.phone);
     }
     if (customerId != null) {
-      this.orderService.latestItems(customerId).subscribe((items) => {
-        if (items.length > 0) {
-          this.items.set(items.map((i) => ({ name: i.name, quantity: i.quantity })));
+      this.orderService.latestItems(customerId).subscribe((latestItem) => {
+        if (latestItem?.orderItem?.length > 0) {
+          this.items.set(latestItem.orderItem.map((i) => ({ name: i.name, quantity: i.quantity })));
+        }
+        if (latestItem?.note) {
+          this.note.set(latestItem.note);
         }
       });
     }

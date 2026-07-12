@@ -15,6 +15,11 @@ export interface Customer {
   location: string;
 }
 
+export interface LatestItem {
+  note: string;
+  orderItem: OrderItem[];
+}
+
 export interface OrderItem {
   name: string;
   quantity: string;

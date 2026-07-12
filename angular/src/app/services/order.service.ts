@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { OrderCard, OrderItem, OrderRequest, OrderStatus } from '../models/models';
+import { LatestItem, OrderCard, OrderItem, OrderRequest, OrderStatus } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class OrderService {
@@ -16,8 +16,21 @@ export class OrderService {
     return this.http.post<any>('/api/form/order', request).pipe(map((d) => this.toCard(d)));
   }
 
-  latestItems(customerId: number): Observable<OrderItem[]> {
-    return this.http.get<OrderItem[]>(`/api/form/latest-items?customerId=${customerId}`);
+  latestItems(customerId: number): Observable<LatestItem> {
+    const url = `/api/form/latest-items?customerId=${customerId}`;
+    console.log('Calling URL:', url);
+    return this.http.get<any>(url).pipe(
+      map((response) => {
+        console.log('Raw API Response:', JSON.stringify(response));
+        console.log('Response keys:', Object.keys(response));
+        console.log('orderItem:', response?.orderItem);
+        console.log('note:', response?.note);
+        return {
+          orderItem: response?.orderItem && Array.isArray(response.orderItem) ? response.orderItem : [],
+          note: response?.note ? response.note : '',
+        } as LatestItem;
+      }),
+    );
   }
 
   week(start?: string): Observable<OrderCard[]> {
@@ -35,9 +48,9 @@ export class OrderService {
   }
 
   updateStatus(id: number, status: OrderStatus): Observable<OrderCard> {
-    return this.http.put<any>(`/api/dashboard/${id}/status`, { status }).pipe(
-      map((d) => this.toCard(d)),
-    );
+    return this.http
+      .put<any>(`/api/dashboard/${id}/status`, { status })
+      .pipe(map((d) => this.toCard(d)));
   }
 
   // Normalize server DTO shape -> frontend OrderCard
