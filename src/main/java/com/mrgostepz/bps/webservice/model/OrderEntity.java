@@ -23,6 +23,9 @@ public class OrderEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer orderId;
 
+    @Column(name = "order_name")
+    private String orderName;
+
     @Column(name = "customer_id")
     private Integer customerId;
 

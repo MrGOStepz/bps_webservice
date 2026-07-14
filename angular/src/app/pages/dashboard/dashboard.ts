@@ -116,6 +116,7 @@ export class Dashboard implements OnInit, OnDestroy {
       const card: OrderCard = {
         id,
         orderId: id,
+        orderName: m.orderName ?? '',
         customerId: m.customerId,
         customerName: m.customerName,
         deliveryAddress: m.deliveryAddress,
@@ -126,6 +127,7 @@ export class Dashboard implements OnInit, OnDestroy {
         deliveryMode: m.deliveryMode,
         status: m.status as OrderStatus,
         items: m.items || [],
+        location: m.location ?? null,
         imagePath: m.imagePath ?? m.image_path ?? null,
       };
       this.orders.update((list) => {

@@ -55,12 +55,26 @@ export class OrderService {
 
   // Normalize server DTO shape -> frontend OrderCard
   private toCard(d: any): OrderCard {
+
     if (!d) {
       return {} as OrderCard;
     }
+
+    // parse orderDetailJson (may be a string) and extract location
+    const orderDetail = ((): any => {
+      try {
+        return typeof d?.orderDetailJson === 'string' ? JSON.parse(d.orderDetailJson) : (d?.orderDetailJson ?? {});
+      } catch (e) {
+        console.warn('Failed to parse orderDetailJson', e);
+        return {};
+      }
+    })();
+
+    const locations= orderDetail?.location ?? null;
     return {
       id: d.orderId ?? d.id,
       orderId: d.orderId ?? d.id,
+      orderName: d.orderName ?? '',
       customerId: d.customerId,
       customerName: d.customerName,
       deliveryAddress: d.deliveryAddress,
@@ -71,6 +85,7 @@ export class OrderService {
       orderDate: d.orderDate,
       status: d.status,
       imagePath: d.imagePath ?? null,
+      location: locations,
       items: d.items ?? [],
     };
   }

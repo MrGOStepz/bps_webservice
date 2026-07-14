@@ -42,11 +42,23 @@ public class OrderService {
     }
 
     public OrderEntity createOrder(OrderRequest request) {
-
+        int number = totalItemsByOrderDate(request.getOrderDate()) + 1;
         OrderEntity order = new OrderEntity();
         order.setCustomerId(request.getCustomerId());
         order.setDeliveryAddress(request.getDeliveryAddress());
         order.setOrderDate(request.getOrderDate());
+
+        // Build orderName in format ddMMyyyy-N where N is count of existing orders for the date + 1
+        if (request.getOrderDate() != null) {
+            String[] d = request.getOrderDate().split("-");
+            String ddMMyyyy = request.getOrderDate().replace("-", "");
+            if (d.length == 3) {
+                ddMMyyyy = d[2] + d[1] + d[0];
+            }
+            order.setOrderName(ddMMyyyy + "-" + number);
+        } else {
+            order.setOrderName("");
+        }
 
         order.setNote(request.getNote());
         order.setDeliveryMode(request.getDeliveryMode());
@@ -107,43 +119,11 @@ public class OrderService {
     }
 
     /**
-     * Return totals of items grouped by orderDate for a given date range.
-     * The returned map's keys are orderDate strings and values are total item counts.
-     */
-    public Map<String, Integer> totalItemsByOrderDate(String startDate, String endDate) {
-        List<OrderEntity> orders = orderRepository.findByOrderDateBetween(startDate, endDate);
-        Map<String, Integer> totals = new HashMap<>();
-        for (OrderEntity order : orders) {
-            String date = order.getOrderDate();
-            int count = parseItems(order.getOrderDetailJson()).stream().mapToInt(item -> {
-                try {
-                    return Integer.parseInt(item.getQuantity());
-                } catch (Exception e) {
-                    return 0;
-                }
-            }).sum();
-            totals.put(date, totals.getOrDefault(date, 0) + count);
-        }
-        return totals;
-    }
-
-    /**
      * Return total count of items for a single orderDate (orderDate stored as String).
      */
     public int totalItemsByOrderDate(String orderDate) {
         List<OrderEntity> orders = orderRepository.findByOrderDate(orderDate);
-        int total = 0;
-        for (OrderEntity order : orders) {
-            int count = parseItems(order.getOrderDetailJson()).stream().mapToInt(item -> {
-                try {
-                    return Integer.parseInt(item.getQuantity());
-                } catch (Exception e) {
-                    return 0;
-                }
-            }).sum();
-            total += count;
-        }
-        return total;
+        return orders.size();
     }
 
     public List<OrderCard> search(Integer customerId, String startDate, String endDate) {

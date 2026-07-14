@@ -14,6 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 public class OrderCard {
     private Integer orderId;
+    private String orderName;
     private Integer customerId;
     private String customerName;
     private String phone;
@@ -24,5 +25,6 @@ public class OrderCard {
     private String orderDate;
     private String status;
     private String imagePath;
+    private String orderDetailJson;
     private List<OrderItemDto> items;
 }

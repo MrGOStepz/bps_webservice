@@ -42,6 +42,7 @@ export type OrderStatus = 'กำลังผลิต' | 'ผลิตเสร
 export interface OrderCard {
   id: number;
   orderId: number;
+  orderName: string;
   customerId: number;
   customerName: string;
   deliveryAddress: string;
@@ -52,6 +53,7 @@ export interface OrderCard {
   freezeMode: string;
   deliveryMode: string;
   items: OrderItem[];
+  location: string;
   imagePath?: string | null;
 }
 

@@ -81,7 +81,7 @@
                     <i class="bi bi-car-front" style="font-size: 1.2rem; color: #6c757d; margin-right: 0.5rem;"></i>
                   }
                   <a
-                    [href]="order.deliveryAddress"
+                    [href]="order.location"
                     target="_blank"
                     rel="noopener noreferrer"
                     title="Open location"
@@ -95,7 +95,7 @@
                 </strong>
                 <strong>
                 <div class="text-end">
-                  <div class="text-muted">{{ order.id }}</div>
+                  <div class="text-muted">{{ order.orderName }}</div>
                   <span class="badge" [class]="statusClass(order.status)">{{ order.status }}</span>
                 </div>
                 </strong>
