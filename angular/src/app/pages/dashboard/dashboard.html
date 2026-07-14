@@ -89,7 +89,13 @@
                   >
                     <i class="bi bi-map" style="font-size: 1.2rem; color: #6c757d;"></i>
                   </a>
-                  @if (pendingFor(order.id)) {
+                  <a
+                    [href]="'tel:' + order.phone"
+                    title="Call phone"
+                    style="display: inline-block; cursor: pointer; margin-right: 0.5rem;"
+                  >
+                    <i class="bi bi-telephone" style="font-size: 1.2rem; color: #6c757d;"></i>
+                  </a>                  @if (pendingFor(order.id)) {
                     <span class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
                   }
                 </strong>
