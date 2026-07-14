@@ -127,6 +127,25 @@ public class OrderService {
         return totals;
     }
 
+    /**
+     * Return total count of items for a single orderDate (orderDate stored as String).
+     */
+    public int totalItemsByOrderDate(String orderDate) {
+        List<OrderEntity> orders = orderRepository.findByOrderDate(orderDate);
+        int total = 0;
+        for (OrderEntity order : orders) {
+            int count = parseItems(order.getOrderDetailJson()).stream().mapToInt(item -> {
+                try {
+                    return Integer.parseInt(item.getQuantity());
+                } catch (Exception e) {
+                    return 0;
+                }
+            }).sum();
+            total += count;
+        }
+        return total;
+    }
+
     public List<OrderCard> search(Integer customerId, String startDate, String endDate) {
         List<OrderEntity> orders;
         if (customerId != null) {
