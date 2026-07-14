@@ -16,6 +16,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,10 +42,12 @@ public class OrderService {
     }
 
     public OrderEntity createOrder(OrderRequest request) {
+
         OrderEntity order = new OrderEntity();
         order.setCustomerId(request.getCustomerId());
         order.setDeliveryAddress(request.getDeliveryAddress());
         order.setOrderDate(request.getOrderDate());
+
         order.setNote(request.getNote());
         order.setDeliveryMode(request.getDeliveryMode());
         order.setFreezeMode(request.getFreezeMode());
@@ -103,6 +106,27 @@ public class OrderService {
                 .toList();
     }
 
+    /**
+     * Return totals of items grouped by orderDate for a given date range.
+     * The returned map's keys are orderDate strings and values are total item counts.
+     */
+    public Map<String, Integer> totalItemsByOrderDate(String startDate, String endDate) {
+        List<OrderEntity> orders = orderRepository.findByOrderDateBetween(startDate, endDate);
+        Map<String, Integer> totals = new HashMap<>();
+        for (OrderEntity order : orders) {
+            String date = order.getOrderDate();
+            int count = parseItems(order.getOrderDetailJson()).stream().mapToInt(item -> {
+                try {
+                    return Integer.parseInt(item.getQuantity());
+                } catch (Exception e) {
+                    return 0;
+                }
+            }).sum();
+            totals.put(date, totals.getOrDefault(date, 0) + count);
+        }
+        return totals;
+    }
+
     public List<OrderCard> search(Integer customerId, String startDate, String endDate) {
         List<OrderEntity> orders;
         if (customerId != null) {
@@ -126,6 +150,7 @@ public class OrderService {
         Customer customerName = customerRepository.findById(order.getCustomerId()).orElse(null);
         return new OrderCard(
                 order.getOrderId(),
+                order.getOrderName(),
                 order.getCustomerId(),
                 customerName == null ? "Unknown" : customerName.getName(),
                 customerName == null ? "Unknown" : customerName.getPhone(),
@@ -136,6 +161,7 @@ public class OrderService {
                 order.getOrderDate(),
                 order.getStatus(),
                 order.getDeliveryProofPath(),
+                order.getOrderDetailJson(),
                 parseItems(order.getOrderDetailJson())
         );
     }
