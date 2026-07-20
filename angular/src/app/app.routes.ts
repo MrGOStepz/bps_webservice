@@ -5,6 +5,7 @@ import { Dashboard } from './pages/dashboard/dashboard';
 import { FormPage } from './pages/form/form';
 import { History } from './pages/history/history';
 import { CustomerPage } from './pages/customer/customer';
+import { OrderEditPage } from './pages/order-edit/order-edit-page';
 import { pageGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -21,6 +22,7 @@ export const routes: Routes = [
       { path: 'form', component: FormPage, canActivate: [pageGuard('form')] },
       { path: 'history', component: History, canActivate: [pageGuard('history')] },
       { path: 'customers', component: CustomerPage, canActivate: [pageGuard('customer')] },
+      { path: 'orders/:id/edit', component: OrderEditPage, canActivate: [pageGuard('form')] },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },

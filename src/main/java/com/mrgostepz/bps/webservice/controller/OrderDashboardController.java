@@ -1,6 +1,7 @@
 package com.mrgostepz.bps.webservice.controller;
 
 import com.mrgostepz.bps.webservice.dto.OrderCard;
+import com.mrgostepz.bps.webservice.dto.UpdateOrderRequest;
 import com.mrgostepz.bps.webservice.service.OrderService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -120,5 +121,17 @@ public class OrderDashboardController {
         } catch (Exception e) {
             return ResponseEntity.status(500).build();
         }
+    }
+
+    /**
+     * Update order details (note, freezeMode, deliveryMode, orderDate, items, orderDetailJson).
+     * This endpoint allows updates to order details.
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateOrder(@PathVariable Integer id,
+                                          @RequestBody UpdateOrderRequest request) {
+        return orderService.updateOrder(id, request)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

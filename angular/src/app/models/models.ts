@@ -37,6 +37,15 @@ export interface OrderRequest {
   items: OrderItem[];
 }
 
+export interface UpdateOrderRequest {
+  note?: string;
+  freezeMode?: string;
+  deliveryMode?: string;
+  orderDate?: string;
+  orderDetailJson?: string;
+  items?: OrderItem[];
+}
+
 export type OrderStatus = 'กำลังผลิต' | 'ผลิตเสร็จแล้ว' | 'กำลังส่ง' | 'จัดส่งแล้ว';
 
 export interface OrderCard {

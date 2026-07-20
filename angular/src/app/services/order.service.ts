@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { LatestItem, OrderCard, OrderItem, OrderRequest, OrderStatus } from '../models/models';
+import { LatestItem, OrderCard, OrderItem, OrderRequest, OrderStatus, UpdateOrderRequest } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class OrderService {
@@ -51,6 +51,10 @@ export class OrderService {
     return this.http
       .put<any>(`/api/dashboard/${id}/status`, { status })
       .pipe(map((d) => this.toCard(d)));
+  }
+
+  updateOrder(id: number, request: UpdateOrderRequest): Observable<OrderCard> {
+    return this.http.put<any>(`/api/dashboard/${id}`, request).pipe(map((d) => this.toCard(d)));
   }
 
   // Normalize server DTO shape -> frontend OrderCard

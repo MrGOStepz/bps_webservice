@@ -5,6 +5,7 @@ import { OrderService } from '../../services/order.service';
 import { WebSocketService } from '../../services/websocket.service';
 import { AuthService } from '../../services/auth.service';
 import { OrderCard, OrderStatus, ORDER_STATUSES } from '../../models/models';
+import { OrderEditComponent } from '../order-edit/order-edit';
 
 interface DayColumn {
   date: string;
@@ -14,7 +15,7 @@ interface DayColumn {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [],
+  imports: [OrderEditComponent],
   templateUrl: './dashboard.html',
   // Angular expects `styleUrls` (plural)
   styleUrls: ['./dashboard.scss'],
@@ -45,6 +46,10 @@ export class Dashboard implements OnInit, OnDestroy {
   viewerModalVisible = signal(false);
   viewerImagePath = signal<string | null>(null);
   viewerError = signal<string | null>(null);
+
+  // Edit modal state
+  editModalVisible = signal(false);
+  editingOrder = signal<OrderCard | null>(null);
 
   readonly columns = computed<DayColumn[]>(() => {
     const start = new Date(this.startDate());
@@ -473,5 +478,31 @@ export class Dashboard implements OnInit, OnDestroy {
     this.viewerImagePath.set(null);
     this.viewerModalVisible.set(false);
     this.viewerError.set(null);
+  }
+
+  // Open edit modal
+  openEditModal(order: OrderCard): void {
+    // Only allow ADMIN and SALE roles to edit
+    const role = this.auth.role();
+    console.debug('Edit modal - user role:', role);
+    if (!role || (role !== 'ADMIN' && role !== 'SALE')) {
+      console.warn('User role does not have permission to edit orders. Role:', role);
+      return;
+    }
+    this.editingOrder.set(order);
+    this.editModalVisible.set(true);
+    console.debug('Edit modal opened for order:', order.orderId);
+  }
+
+  // Close edit modal
+  closeEditModal(): void {
+    this.editingOrder.set(null);
+    this.editModalVisible.set(false);
+  }
+
+  // Handle order update from edit modal
+  onOrderSaved(updated: OrderCard): void {
+    this.orders.update((list) => list.map((o) => (o.id === updated.id ? updated : o)));
+    this.closeEditModal();
   }
 }

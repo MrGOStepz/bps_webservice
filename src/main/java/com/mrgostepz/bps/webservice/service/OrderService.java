@@ -6,6 +6,7 @@ import com.mrgostepz.bps.webservice.dto.OrderCard;
 import com.mrgostepz.bps.webservice.dto.OrderItemDto;
 import com.mrgostepz.bps.webservice.dto.OrderRequest;
 import com.mrgostepz.bps.webservice.dto.StatusUpdate;
+import com.mrgostepz.bps.webservice.dto.UpdateOrderRequest;
 import com.mrgostepz.bps.webservice.enums.OrderStatus;
 import com.mrgostepz.bps.webservice.model.Customer;
 import com.mrgostepz.bps.webservice.model.LatestItem;
@@ -145,6 +146,37 @@ public class OrderService {
         return parseLatestItems(latest.getOrderDetailJson());
     }
 
+    /**
+     * Update order with editable fields: note, freezeMode, deliveryMode, orderDate, orderDetailJson, items.
+     */
+    public Optional<OrderCard> updateOrder(Integer id, UpdateOrderRequest request) {
+        return orderRepository.findById(id).map(order -> {
+            if (request.getNote() != null) {
+                order.setNote(request.getNote());
+            }
+            if (request.getFreezeMode() != null) {
+                order.setFreezeMode(request.getFreezeMode());
+            }
+            if (request.getDeliveryMode() != null) {
+                order.setDeliveryMode(request.getDeliveryMode());
+            }
+            if (request.getOrderDate() != null) {
+                order.setOrderDate(request.getOrderDate());
+            }
+            if (request.getOrderDetailJson() != null) {
+                order.setOrderDetailJson(request.getOrderDetailJson());
+            } else if (request.getItems() != null) {
+                // If items are provided but no orderDetailJson, update the items in the detail JSON
+                Map<String, Object> detail = parseDetailJson(order.getOrderDetailJson());
+                detail.put("items", request.getItems());
+                order.setOrderDetailJson(writeDetailJsonFromMap(detail));
+            }
+            OrderEntity saved = orderRepository.save(order);
+            messagingTemplate.convertAndSend(TOPIC_ORDERS, toCard(saved));
+            return toCard(saved);
+        });
+    }
+
     private OrderCard toCard(OrderEntity order) {
         Customer customerName = customerRepository.findById(order.getCustomerId()).orElse(null);
         return new OrderCard(
@@ -205,6 +237,25 @@ public class OrderService {
                     "location", request.getLocation() == null ? "" : request.getLocation(),
                     "items", request.getItems() == null ? List.of() : request.getItems()
             );
+            return objectMapper.writeValueAsString(detail);
+        } catch (Exception e) {
+            return "{+" + e.getMessage() + "}";
+        }
+    }
+
+    private Map<String, Object> parseDetailJson(String json) {
+        if (json == null || json.isBlank()) {
+            return new HashMap<>();
+        }
+        try {
+            return objectMapper.readValue(json, new TypeReference<>() {});
+        } catch (Exception e) {
+            return new HashMap<>();
+        }
+    }
+
+    private String writeDetailJsonFromMap(Map<String, Object> detail) {
+        try {
             return objectMapper.writeValueAsString(detail);
         } catch (Exception e) {
             return "{+" + e.getMessage() + "}";
