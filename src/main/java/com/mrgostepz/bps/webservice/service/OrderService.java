@@ -101,6 +101,19 @@ public class OrderService {
     }
 
     /**
+     * Delete an order by ID.
+     */
+    public boolean deleteOrder(Integer id) {
+        if (orderRepository.existsById(id)) {
+            orderRepository.deleteById(id);
+            // Notify subscribers that an order was deleted
+            messagingTemplate.convertAndSend(TOPIC_ORDERS, new StatusUpdate(id, "DELETED"));
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Update order status and return the updated OrderEntity.
      * This is useful for API endpoints that need the raw entity rather than the dashboard card.
      */

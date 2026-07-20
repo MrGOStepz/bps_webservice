@@ -51,6 +51,11 @@ export class Dashboard implements OnInit, OnDestroy {
   editModalVisible = signal(false);
   editingOrder = signal<OrderCard | null>(null);
 
+  // Delete confirmation state
+  deleteConfirmVisible = signal(false);
+  deleteOrderId = signal<number | null>(null);
+  deleteOrderName = signal<string>('');
+
   readonly columns = computed<DayColumn[]>(() => {
     const start = new Date(this.startDate());
     const cols: DayColumn[] = [];
@@ -95,18 +100,51 @@ export class Dashboard implements OnInit, OnDestroy {
       return;
     }
 
+    // Handle delete broadcasts: remove the order card in real time.
+    if (m.status === 'DELETED') {
+      this.orders.update((list) => list.filter((o) => o.id !== id));
+      this.pending.update((mm) => {
+        const copy = { ...mm };
+        delete copy[id];
+        return copy;
+      });
+      return;
+    }
+
     // Skip websocket updates for orders that have a pending API call
     const p = this.pending();
     if (p[id]) {
       return;
     }
 
+    const isFullCard = 'items' in m && m.items;
     const existing = this.orders().find((o) => o.id === id);
     if (!existing) {
-      return; // Order doesn't exist locally, ignore message
+      // A full card for an unknown order means it was just created elsewhere;
+      // add it so the dashboard updates in real time. Ignore partial updates.
+      if (isFullCard) {
+        this.addOrder({
+          id,
+          orderId: id,
+          orderName: m.orderName ?? '',
+          customerId: m.customerId,
+          customerName: m.customerName,
+          deliveryAddress: m.deliveryAddress,
+          orderDate: m.orderDate,
+          note: m.note,
+          phone: m.phone,
+          freezeMode: m.freezeMode,
+          deliveryMode: m.deliveryMode,
+          status: m.status as OrderStatus,
+          items: m.items || [],
+          location: m.location ?? null,
+          imagePath: m.imagePath ?? m.image_path ?? null,
+        });
+      }
+      return;
     }
 
-    if (!('items' in m && m.items)) {
+    if (!isFullCard) {
       // Status update only - update only the matching order
       this.orders.update((list) => {
         const index = list.findIndex((o) => o.id === id);
@@ -504,5 +542,47 @@ export class Dashboard implements OnInit, OnDestroy {
   onOrderSaved(updated: OrderCard): void {
     this.orders.update((list) => list.map((o) => (o.id === updated.id ? updated : o)));
     this.closeEditModal();
+  }
+
+  // Open delete confirmation dialog
+  openDeleteConfirm(order: OrderCard): void {
+    this.deleteOrderId.set(order.id);
+    this.deleteOrderName.set(order.orderName ?? '');
+    this.deleteConfirmVisible.set(true);
+  }
+
+  // Close delete confirmation dialog
+  closeDeleteConfirm(): void {
+    this.deleteOrderId.set(null);
+    this.deleteOrderName.set('');
+    this.deleteConfirmVisible.set(false);
+  }
+
+  // Confirm and execute delete
+  confirmDelete(): void {
+    const orderId = this.deleteOrderId();
+    if (orderId == null) return;
+
+    this.pending.update((m) => ({ ...m, [orderId]: true }));
+
+    this.orderService.deleteOrder(orderId).subscribe({
+      next: () => {
+        this.orders.update((list) => list.filter((o) => o.id !== orderId));
+        this.pending.update((m) => {
+          const copy = { ...m };
+          delete copy[orderId];
+          return copy;
+        });
+        this.closeDeleteConfirm();
+      },
+      error: (err) => {
+        console.error('Error deleting order:', err);
+        this.pending.update((m) => {
+          const copy = { ...m };
+          delete copy[orderId];
+          return copy;
+        });
+      }
+    });
   }
 }

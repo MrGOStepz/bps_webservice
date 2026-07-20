@@ -64,6 +64,29 @@
   </div>
 }
 
+<!-- Delete confirmation modal -->
+@if (deleteConfirmVisible()) {
+  <div class="modal-backdrop d-flex align-items-center justify-content-center" style="z-index: 1050;" (click)="closeDeleteConfirm()">
+    <div class="card" style="width: 420px; max-width: 95%;" (click)="$event.stopPropagation()">
+      <div class="card-body">
+        <h5 class="card-title">Delete order</h5>
+        <p class="small text-muted">
+          Are you sure you want to delete
+          @if (deleteOrderName()) {
+            <strong>{{ deleteOrderName() }}</strong>
+          } @else {
+            this order
+          }? This action cannot be undone.
+        </p>
+        <div class="d-flex justify-content-end">
+          <button class="btn btn-sm btn-secondary me-2" (click)="closeDeleteConfirm()">Cancel</button>
+          <button class="btn btn-sm btn-danger" (click)="confirmDelete()">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
 <!-- Edit order modal -->
 @if (editModalVisible() && editingOrder()) {
  <div class="modal-backdrop d-flex align-items-center justify-content-center" style="z-index: 1050;" (click)="closeEditModal()">
@@ -149,6 +172,14 @@
                   title="Edit order details"
                 >
                   <i class="bi bi-pencil"></i> Edit
+                </button>
+                <button
+                  class="btn btn-sm btn-outline-danger w-100 mt-1"
+                  (click)="openDeleteConfirm(order)"
+                  [disabled]="pendingFor(order.id)"
+                  title="Delete order"
+                >
+                  <i class="bi bi-trash"></i> Delete
                 </button>
               }
             </div>

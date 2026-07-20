@@ -57,6 +57,10 @@ export class OrderService {
     return this.http.put<any>(`/api/dashboard/${id}`, request).pipe(map((d) => this.toCard(d)));
   }
 
+  deleteOrder(id: number): Observable<{ success: boolean; message: string }> {
+    return this.http.delete<any>(`/api/dashboard/${id}`);
+  }
+
   // Normalize server DTO shape -> frontend OrderCard
   private toCard(d: any): OrderCard {
 
