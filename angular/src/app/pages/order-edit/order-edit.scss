@@ -1,0 +1,27 @@
+.card {
+  border: none;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+
+  .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+  }
+}
+
+.table-responsive {
+  margin-bottom: 1rem;
+}
+
+table.table {
+  margin-bottom: 0;
+
+  th, td {
+    vertical-align: middle;
+  }
+}
+
+.form-control:disabled,
+.form-select:disabled,
+.btn:disabled {
+  opacity: 0.6;
+}

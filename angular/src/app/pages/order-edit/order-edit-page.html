@@ -1,0 +1,26 @@
+<div class="container mt-4">
+  @if (loading()) {
+    <div class="d-flex justify-content-center align-items-center" style="height: 400px;">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+  } @else if (error()) {
+    <div class="alert alert-danger" role="alert">
+      <h4 class="alert-heading">Error</h4>
+      <p>{{ error() }}</p>
+      <hr>
+      <button class="btn btn-sm btn-primary" (click)="onCancelled()">Back to Dashboard</button>
+    </div>
+  } @else if (order()) {
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <app-order-edit
+          [order]="order()"
+          (saved)="onSaved($event)"
+          (cancelled)="onCancelled()"
+        ></app-order-edit>
+      </div>
+    </div>
+  }
+</div>

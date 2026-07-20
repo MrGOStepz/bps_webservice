@@ -1,0 +1,140 @@
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">Edit Order #{{ order?.orderName }}</h5>
+  </div>
+  <div class="card-body">
+    @if (message()) {
+      <div class="alert alert-info py-2 mb-3">{{ message() }}</div>
+    }
+
+    <form (ngSubmit)="submit()" novalidate>
+      <div class="mb-3">
+        <label class="form-label">Note</label>
+        <textarea
+          class="form-control"
+          [ngModel]="note()"
+          (ngModelChange)="note.set($event)"
+          name="note"
+          rows="3"
+        ></textarea>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Is Freeze</label>
+        <select
+          class="form-select"
+          [ngModel]="freezeMode()"
+          (ngModelChange)="freezeMode.set($event)"
+          name="freezeMode"
+        >
+          <option value="ละลาย">ละลาย</option>
+          <option value="แช่แข็ง">แช่แข็ง</option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Delivery Mode</label>
+        <select
+          class="form-select"
+          [ngModel]="deliveryMode()"
+          (ngModelChange)="deliveryMode.set($event)"
+          name="deliveryMode"
+        >
+          <option value="ขนส่ง">ขนส่ง</option>
+          <option value="ส่งเอง">ส่งเอง</option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Order Date</label>
+        <input
+          type="date"
+          class="form-control"
+          [ngModel]="orderDate()"
+          (ngModelChange)="orderDate.set($event)"
+          name="orderDate"
+        />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Items</label>
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Item Name</th>
+                <th>Quantity</th>
+                <th style="width: 60px;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of items(); track $index) {
+                <tr>
+                  <td>
+                    <input
+                      type="text"
+                      class="form-control form-control-sm"
+                      [ngModel]="item.name"
+                      (ngModelChange)="updateItemName($index, $event)"
+                      name="itemName{{ $index }}"
+                      placeholder="Item name"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      class="form-control form-control-sm"
+                      [ngModel]="item.quantity"
+                      (ngModelChange)="updateItemQuantity($index, $event)"
+                      name="itemQuantity{{ $index }}"
+                      placeholder="Qty"
+                    />
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-danger"
+                      (click)="removeItem($index)"
+                      [disabled]="saving()"
+                    >
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary"
+          (click)="addItem()"
+          [disabled]="saving()"
+        >
+          <i class="bi bi-plus"></i> Add Item
+        </button>
+      </div>
+
+      <div class="d-flex gap-2 justify-content-end">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="cancel()"
+          [disabled]="saving()"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="saving()"
+        >
+          @if (saving()) {
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          }
+          Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
