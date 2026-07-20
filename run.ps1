@@ -41,23 +41,36 @@ $BackendPath = $RepoRoot
 $AngularPath = Join-Path $RepoRoot 'angular'
 $SpringStatic = Join-Path $RepoRoot 'src\main\resources\static'
 
-# Force pull latest 'main' from origin (overwrites local changes)
+# Pull latest 'main' from origin first (safe update without forcing a checkout)
 if (Get-Command git -ErrorAction SilentlyContinue) {
-    Write-Host "Force pulling latest 'main' from origin..."
+    Write-Host "Fetching latest 'main' from origin..."
     Push-Location $RepoRoot
     try {
+        $current = (& git rev-parse --abbrev-ref HEAD) -replace "`r|`n",''
         & git fetch origin main --quiet
-        Write-Host "Checking out 'main' branch..."
-        & git checkout main
-        Write-Host "Resetting local 'main' to origin/main (force)..."
-        & git reset --hard origin/main
+        if ($current -eq 'main') {
+            Write-Host "On 'main' branch; pulling latest changes..."
+            & git pull origin main
+        }
+        else {
+            # Update (or create) local 'main' to match origin/main without checking it out
+            & git rev-parse --verify main > $null 2>&1
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "Updating local 'main' branch to origin/main..."
+                & git branch -f main origin/main
+            }
+            else {
+                Write-Host "Creating local 'main' branch from origin/main..."
+                & git branch main origin/main
+            }
+        }
     } catch {
         Write-Warning "Git operation failed: $_"
     }
     Pop-Location
 }
 else {
-    Write-Warning "git not found in PATH; skipping force pull of 'main'."
+    Write-Warning "git not found in PATH; skipping pull of 'main'."
 }
 
 function Check-Prereq {
