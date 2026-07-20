@@ -203,7 +203,8 @@ export class Dashboard implements OnInit, OnDestroy {
 
   // Return whether the currently authenticated role is allowed to set the
   // given status. Mapping according to requirements:
-  // - ADMIN, SALE: can set all statuses
+  // - ADMIN: can set all statuses
+  // - SALE: cannot update status
   // - STAFF: can set first three statuses (not 'จัดส่งแล้ว')
   // - DELIVERY: can set only 'จัดส่งแล้ว'
   canSetStatus(status: OrderStatus): boolean {
@@ -213,7 +214,7 @@ export class Dashboard implements OnInit, OnDestroy {
       case 'ADMIN':
         return true;
       case 'SALE':
-        return true;
+        return false;
       case 'STAFF':
         // STAFF can set only 'กำลังผลิต' and 'ผลิตเสร็จแล้ว'
         return status === 'กำลังผลิต' || status === 'ผลิตเสร็จแล้ว';
