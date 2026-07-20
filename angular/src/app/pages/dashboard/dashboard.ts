@@ -174,6 +174,8 @@ export class Dashboard implements OnInit, OnDestroy {
     switch (role) {
       case 'ADMIN':
         return true;
+      case 'SALE':
+        return true;
       case 'STAFF':
         // STAFF can set only 'กำลังผลิต' and 'ผลิตเสร็จแล้ว'
         return status === 'กำลังผลิต' || status === 'ผลิตเสร็จแล้ว';
@@ -183,6 +185,11 @@ export class Dashboard implements OnInit, OnDestroy {
       default:
         return false;
     }
+  }
+
+  canEditOrder(): boolean {
+    const role = this.auth.role();
+    return role === 'ADMIN' || role === 'SALE';
   }
 
   // changeStatus(order: OrderCard, status: OrderStatus): void {
@@ -482,13 +489,6 @@ export class Dashboard implements OnInit, OnDestroy {
 
   // Open edit modal
   openEditModal(order: OrderCard): void {
-    // Only allow ADMIN and SALE roles to edit
-    const role = this.auth.role();
-    console.debug('Edit modal - user role:', role);
-    if (!role || (role !== 'ADMIN' && role !== 'SALE')) {
-      console.warn('User role does not have permission to edit orders. Role:', role);
-      return;
-    }
     this.editingOrder.set(order);
     this.editModalVisible.set(true);
     console.debug('Edit modal opened for order:', order.orderId);
