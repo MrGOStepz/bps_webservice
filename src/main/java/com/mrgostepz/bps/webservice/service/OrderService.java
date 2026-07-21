@@ -13,6 +13,7 @@ import com.mrgostepz.bps.webservice.model.LatestItem;
 import com.mrgostepz.bps.webservice.model.OrderEntity;
 import com.mrgostepz.bps.webservice.repository.CustomerRepository;
 import com.mrgostepz.bps.webservice.repository.OrderRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class OrderService {
 
@@ -43,32 +45,38 @@ public class OrderService {
     }
 
     public OrderEntity createOrder(OrderRequest request) {
-        int number = totalItemsByOrderDate(request.getOrderDate()) + 1;
-        OrderEntity order = new OrderEntity();
-        order.setCustomerId(request.getCustomerId());
-        order.setDeliveryAddress(request.getDeliveryAddress());
-        order.setOrderDate(request.getOrderDate());
+        try {
+            int number = totalItemsByOrderDate(request.getOrderDate()) + 1;
+            OrderEntity order = new OrderEntity();
+            order.setCustomerId(request.getCustomerId());
+            order.setDeliveryAddress(request.getDeliveryAddress());
+            order.setOrderDate(request.getOrderDate());
 
-        // Build orderName in format ddMMyyyy-N where N is count of existing orders for the date + 1
-        if (request.getOrderDate() != null) {
-            String[] d = request.getOrderDate().split("-");
-            String ddMMyyyy = request.getOrderDate().replace("-", "");
-            if (d.length == 3) {
-                ddMMyyyy = d[2] + d[1] + d[0];
+            // Build orderName in format ddMMyyyy-N where N is count of existing orders for the date + 1
+            if (request.getOrderDate() != null) {
+                String[] d = request.getOrderDate().split("-");
+                String ddMMyyyy = request.getOrderDate().replace("-", "");
+                if (d.length == 3) {
+                    ddMMyyyy = d[2] + d[1] + d[0];
+                }
+                order.setOrderName(ddMMyyyy + "-" + number);
+            } else {
+                order.setOrderName("");
             }
-            order.setOrderName(ddMMyyyy + "-" + number);
-        } else {
-            order.setOrderName("");
-        }
 
-        order.setNote(request.getNote());
-        order.setDeliveryMode(request.getDeliveryMode());
-        order.setFreezeMode(request.getFreezeMode());
-        order.setStatus(OrderStatus.PROCESSING.getOrderStatus());
-        order.setOrderDetailJson(writeDetailJson(request));
-        OrderEntity saved = orderRepository.save(order);
-        messagingTemplate.convertAndSend(TOPIC_ORDERS, toCard(saved));
-        return saved;
+            order.setNote(request.getNote());
+            order.setDeliveryMode(request.getDeliveryMode());
+            order.setFreezeMode(request.getFreezeMode());
+            order.setStatus(OrderStatus.PROCESSING.getOrderStatus());
+            order.setOrderDetailJson(writeDetailJson(request));
+            OrderEntity saved = orderRepository.save(order);
+            messagingTemplate.convertAndSend(TOPIC_ORDERS, toCard(saved));
+            return saved;
+        }catch (Exception e){
+            e.printStackTrace();
+            log.error("Error creating order: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
     }
 
     public Optional<OrderCard> updateStatus(Integer id, String status) {

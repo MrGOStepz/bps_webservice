@@ -108,7 +108,8 @@
             <label class="form-label">Note</label>
             <textarea
               class="form-control"
-              rows="2"
+              rows="4"
+              style="resize: vertical"
               [ngModel]="note()"
               (ngModelChange)="note.set($event)"
               name="note"

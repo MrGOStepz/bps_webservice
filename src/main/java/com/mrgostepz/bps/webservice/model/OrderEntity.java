@@ -30,13 +30,13 @@ public class OrderEntity {
     private Integer customerId;
 
     @Lob
-    @Column(name = "order_detail_json")
+    @Column(name = "order_detail_json", columnDefinition = "LONGTEXT")
     private String orderDetailJson;
 
     @Column(name = "delivery_address")
     private String deliveryAddress;
 
-    @Column(name = "note")
+    @Column(name = "note", columnDefinition = "LONGTEXT")
     private String note;
 
     @Column(name = "order_date")
@@ -52,6 +52,6 @@ public class OrderEntity {
     private String freezeMode;
 
     // Path to uploaded delivery proof (image or video)
-    @Column(name = "delivery_proof_path")
+    @Column(name = "delivery_proof_path", columnDefinition = "LONGTEXT")
     private String deliveryProofPath;
 }
