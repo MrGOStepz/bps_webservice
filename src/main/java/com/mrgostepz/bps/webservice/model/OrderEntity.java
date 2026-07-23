@@ -54,4 +54,7 @@ public class OrderEntity {
     // Path to uploaded delivery proof (image or video)
     @Column(name = "delivery_proof_path", columnDefinition = "LONGTEXT")
     private String deliveryProofPath;
+
+    @Column(name = "is_active")
+    private boolean isActive;
 }

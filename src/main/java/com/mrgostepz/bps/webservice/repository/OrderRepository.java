@@ -11,9 +11,11 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
 
     List<OrderEntity> findByOrderDateBetween(String startDate, String endDate);
 
-    List<OrderEntity> findByCustomerIdAndOrderDateBetween(Integer customerId, String startDate, String endDate);
+    List<OrderEntity> findByOrderDateBetweenAndIsActiveTrue(String startDate, String endDate);
 
-    List<OrderEntity> findByCustomerId(Integer customerId);
+    List<OrderEntity> findByCustomerIdAndOrderDateBetweenAndIsActiveTrue(Integer customerId, String startDate, String endDate);
+
+    List<OrderEntity> findByCustomerIdAndIsActiveTrue(Integer customerId);
 
     // Find orders by a single orderDate (stored as String)
     List<OrderEntity> findByOrderDate(String orderDate);

@@ -13,17 +13,16 @@ import com.mrgostepz.bps.webservice.model.LatestItem;
 import com.mrgostepz.bps.webservice.model.OrderEntity;
 import com.mrgostepz.bps.webservice.repository.CustomerRepository;
 import com.mrgostepz.bps.webservice.repository.OrderRepository;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@Slf4j
 @Service
 public class OrderService {
 
@@ -45,38 +44,33 @@ public class OrderService {
     }
 
     public OrderEntity createOrder(OrderRequest request) {
-        try {
-            int number = totalItemsByOrderDate(request.getOrderDate()) + 1;
-            OrderEntity order = new OrderEntity();
-            order.setCustomerId(request.getCustomerId());
-            order.setDeliveryAddress(request.getDeliveryAddress());
-            order.setOrderDate(request.getOrderDate());
+        int number = totalItemsByOrderDate(request.getOrderDate()) + 1;
+        OrderEntity order = new OrderEntity();
+        order.setCustomerId(request.getCustomerId());
+        order.setDeliveryAddress(request.getDeliveryAddress());
+        order.setOrderDate(request.getOrderDate());
+        order.setActive(true);
 
-            // Build orderName in format ddMMyyyy-N where N is count of existing orders for the date + 1
-            if (request.getOrderDate() != null) {
-                String[] d = request.getOrderDate().split("-");
-                String ddMMyyyy = request.getOrderDate().replace("-", "");
-                if (d.length == 3) {
-                    ddMMyyyy = d[2] + d[1] + d[0];
-                }
-                order.setOrderName(ddMMyyyy + "-" + number);
-            } else {
-                order.setOrderName("");
+        // Build orderName in format ddMMyyyy-N where N is count of existing orders for the date + 1
+        if (request.getOrderDate() != null) {
+            String[] d = request.getOrderDate().split("-");
+            String ddMMyyyy = request.getOrderDate().replace("-", "");
+            if (d.length == 3) {
+                ddMMyyyy = d[2] + d[1] + d[0];
             }
-
-            order.setNote(request.getNote());
-            order.setDeliveryMode(request.getDeliveryMode());
-            order.setFreezeMode(request.getFreezeMode());
-            order.setStatus(OrderStatus.PROCESSING.getOrderStatus());
-            order.setOrderDetailJson(writeDetailJson(request));
-            OrderEntity saved = orderRepository.save(order);
-            messagingTemplate.convertAndSend(TOPIC_ORDERS, toCard(saved));
-            return saved;
-        }catch (Exception e){
-            e.printStackTrace();
-            log.error("Error creating order: " + e.getMessage());
-            throw new RuntimeException(e);
+            order.setOrderName(ddMMyyyy + "-" + number);
+        } else {
+            order.setOrderName("");
         }
+
+        order.setNote(request.getNote());
+        order.setDeliveryMode(request.getDeliveryMode());
+        order.setFreezeMode(request.getFreezeMode());
+        order.setStatus(OrderStatus.PROCESSING.getOrderStatus());
+        order.setOrderDetailJson(writeDetailJson(request));
+        OrderEntity saved = orderRepository.save(order);
+        messagingTemplate.convertAndSend(TOPIC_ORDERS, toCard(saved));
+        return saved;
     }
 
     public Optional<OrderCard> updateStatus(Integer id, String status) {
@@ -112,13 +106,13 @@ public class OrderService {
      * Delete an order by ID.
      */
     public boolean deleteOrder(Integer id) {
-        if (orderRepository.existsById(id)) {
-            orderRepository.deleteById(id);
+        return orderRepository.findById(id).map(order -> {
+            order.setActive(false);
+            orderRepository.save(order);
             // Notify subscribers that an order was deleted
             messagingTemplate.convertAndSend(TOPIC_ORDERS, new StatusUpdate(id, "DELETED"));
             return true;
-        }
-        return false;
+        }).orElse(false);
     }
 
     /**
@@ -135,7 +129,8 @@ public class OrderService {
     }
 
     public List<OrderCard> findByDateRange(String startDate, String endDate) {
-        return orderRepository.findByOrderDateBetween(startDate, endDate).stream()
+        return orderRepository.findByOrderDateBetweenAndIsActiveTrue(startDate, endDate).stream()
+//                .sorted(Comparator.comparing(OrderEntity::getOrderName, Comparator.nullsLast(Comparator.naturalOrder())))
                 .map(this::toCard)
                 .toList();
     }
@@ -151,15 +146,18 @@ public class OrderService {
     public List<OrderCard> search(Integer customerId, String startDate, String endDate) {
         List<OrderEntity> orders;
         if (customerId != null) {
-            orders = orderRepository.findByCustomerIdAndOrderDateBetween(customerId, startDate, endDate);
+            orders = orderRepository.findByCustomerIdAndOrderDateBetweenAndIsActiveTrue(customerId, startDate, endDate);
         } else {
-            orders = orderRepository.findByOrderDateBetween(startDate, endDate);
+            orders = orderRepository.findByOrderDateBetweenAndIsActiveTrue(startDate, endDate);
         }
-        return orders.stream().map(this::toCard).toList();
+        return orders.stream()
+//                .sorted(Comparator.comparing(OrderEntity::getOrderName, Comparator.nullsLast(Comparator.naturalOrder())))
+                .map(this::toCard)
+                .toList();
     }
 
     public LatestItem latestItems(Integer customerId) {
-        List<OrderEntity> orders = orderRepository.findByCustomerId(customerId);
+        List<OrderEntity> orders = orderRepository.findByCustomerIdAndIsActiveTrue(customerId);
         if (orders.isEmpty()) {
             return new LatestItem();
         }
@@ -192,6 +190,19 @@ public class OrderService {
                 detail.put("items", request.getItems());
                 order.setOrderDetailJson(writeDetailJsonFromMap(detail));
             }
+            int number = totalItemsByOrderDate(request.getOrderDate()) + 1;
+            // Build orderName in format ddMMyyyy-N where N is count of existing orders for the date + 1
+            if (request.getOrderDate() != null) {
+                String[] d = request.getOrderDate().split("-");
+                String ddMMyyyy = request.getOrderDate().replace("-", "");
+                if (d.length == 3) {
+                    ddMMyyyy = d[2] + d[1] + d[0];
+                }
+                order.setOrderName(ddMMyyyy + "-" + number);
+            } else {
+                order.setOrderName("");
+            }
+            order.setActive(true);
             OrderEntity saved = orderRepository.save(order);
             messagingTemplate.convertAndSend(TOPIC_ORDERS, toCard(saved));
             return toCard(saved);
