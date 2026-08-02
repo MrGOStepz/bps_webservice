@@ -44,7 +44,7 @@ public class OrderService {
     }
 
     public OrderEntity createOrder(OrderRequest request) {
-        int number = totalItemsByOrderDate(request.getOrderDate()) + 1;
+        int number = getNextOrderId();
         OrderEntity order = new OrderEntity();
         order.setCustomerId(request.getCustomerId());
         order.setDeliveryAddress(request.getDeliveryAddress());
@@ -143,6 +143,17 @@ public class OrderService {
         return orders.size();
     }
 
+    /**
+     * Get the latest OrderId and return it plus 1.
+     * If no orders exist, returns 1.
+     */
+    public Integer getNextOrderId() {
+        Optional<Integer> maxOrderId = orderRepository.findMaxOrderId();
+        return maxOrderId.map(id -> id + 1).orElse(1);
+    }
+
+
+
     public List<OrderCard> search(Integer customerId, String startDate, String endDate) {
         List<OrderEntity> orders;
         if (customerId != null) {
@@ -190,7 +201,7 @@ public class OrderService {
                 detail.put("items", request.getItems());
                 order.setOrderDetailJson(writeDetailJsonFromMap(detail));
             }
-            int number = totalItemsByOrderDate(request.getOrderDate()) + 1;
+//            int number = totalItemsByOrderDate(request.getOrderDate()) + 1;
             // Build orderName in format ddMMyyyy-N where N is count of existing orders for the date + 1
             if (request.getOrderDate() != null) {
                 String[] d = request.getOrderDate().split("-");
@@ -198,7 +209,7 @@ public class OrderService {
                 if (d.length == 3) {
                     ddMMyyyy = d[2] + d[1] + d[0];
                 }
-                order.setOrderName(ddMMyyyy + "-" + number);
+                order.setOrderName(ddMMyyyy + "-" + id);
             } else {
                 order.setOrderName("");
             }
