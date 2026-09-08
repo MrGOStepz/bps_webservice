@@ -21,7 +21,11 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
@@ -129,10 +133,8 @@ public class OrderService {
     }
 
     public List<OrderCard> findByDateRange(String startDate, String endDate) {
-        return orderRepository.findByOrderDateBetweenAndIsActiveTrue(startDate, endDate).stream()
-//                .sorted(Comparator.comparing(OrderEntity::getOrderName, Comparator.nullsLast(Comparator.naturalOrder())))
-                .map(this::toCard)
-                .toList();
+        List<OrderEntity> orders = orderRepository.findByOrderDateBetweenAndIsActiveTrue(startDate, endDate);
+        return toCards(orders);
     }
 
     /**
@@ -161,10 +163,7 @@ public class OrderService {
         } else {
             orders = orderRepository.findByOrderDateBetweenAndIsActiveTrue(startDate, endDate);
         }
-        return orders.stream()
-//                .sorted(Comparator.comparing(OrderEntity::getOrderName, Comparator.nullsLast(Comparator.naturalOrder())))
-                .map(this::toCard)
-                .toList();
+        return toCards(orders);
     }
 
     public LatestItem latestItems(Integer customerId) {
@@ -220,14 +219,39 @@ public class OrderService {
         });
     }
 
+    private List<OrderCard> toCards(List<OrderEntity> orders) {
+        if (orders == null || orders.isEmpty()) {
+            return List.of();
+        }
+
+        Set<Integer> customerIds = orders.stream()
+                .map(OrderEntity::getCustomerId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Map<Integer, Customer> customerMap = customerIds.isEmpty() ? Map.of() :
+                customerRepository.findAllById(customerIds).stream()
+                        .collect(Collectors.toMap(Customer::getCustomerId, Function.identity(), (existing, replacing) -> existing));
+
+        return orders.stream()
+                .map(order -> toCard(order, order.getCustomerId() == null ? null : customerMap.get(order.getCustomerId())))
+                .toList();
+    }
+
     private OrderCard toCard(OrderEntity order) {
-        Customer customerName = customerRepository.findById(order.getCustomerId()).orElse(null);
+        Customer customer = (order.getCustomerId() == null)
+                ? null
+                : customerRepository.findById(order.getCustomerId()).orElse(null);
+        return toCard(order, customer);
+    }
+
+    private OrderCard toCard(OrderEntity order, Customer customer) {
         return new OrderCard(
                 order.getOrderId(),
                 order.getOrderName(),
                 order.getCustomerId(),
-                customerName == null ? "Unknown" : customerName.getName(),
-                customerName == null ? "Unknown" : customerName.getPhone(),
+                customer == null ? "Unknown" : customer.getName(),
+                customer == null ? "Unknown" : customer.getPhone(),
                 order.getDeliveryAddress(),
                 order.getNote(),
                 order.getFreezeMode(),

@@ -15,7 +15,7 @@ Access Points (Dev Mode):
   Remote:    http://mrgostepz.thddns.net:5851 (port mapping: 5852 → 4200)
 
 Notes:
-- Designed for Windows PowerShell (powershell.exe) and to be run from repository root.
+- Designed for PowerShell (pwsh.exe) and to be run from repository root.
 - Requires Java (matching Gradle toolchain) and Node/npm installed for Angular.
 - Angular dev server listens on all network interfaces (0.0.0.0:4200) for remote access.
 - In `prod` mode the Angular dist (dist/angular) is copied into Spring Boot's
@@ -98,7 +98,7 @@ if ($Mode -eq 'dev') {
         Write-Host "Backend available at: http://localhost:8080"
         $backendCommand = "Set-Location -LiteralPath '$BackendPath'; & '.\gradlew.bat' bootRun"
         if ($OpenWindows) {
-            Start-Process -FilePath 'powershell.exe' -ArgumentList '-NoExit', '-Command', $backendCommand -WorkingDirectory $BackendPath
+            Start-Process -FilePath 'pwsh.exe' -ArgumentList '-NoExit', '-Command', $backendCommand -WorkingDirectory $BackendPath
         }
         else {
             Write-Host "-- Running backend in current console --"; Invoke-Expression $backendCommand
@@ -115,7 +115,7 @@ if ($Mode -eq 'dev') {
                 Write-Host "node_modules not found, running npm install in $AngularPath..."
                 if ($OpenWindows) {
                     $installCmd = "Set-Location -LiteralPath '$AngularPath'; npm install"
-                    Start-Process -FilePath 'powershell.exe' -ArgumentList '-NoExit', '-Command', $installCmd -WorkingDirectory $AngularPath
+                    Start-Process -FilePath 'pwsh.exe' -ArgumentList '-NoExit', '-Command', $installCmd -WorkingDirectory $AngularPath
                     Start-Sleep -Seconds 1
                     Write-Host "Opened a window to run 'npm install'. After install completes, re-run script to start dev server or open another window to run it now."
                 }
@@ -130,7 +130,7 @@ if ($Mode -eq 'dev') {
 
         $frontendCommand = "Set-Location -LiteralPath '$AngularPath'; npm start"
         if ($OpenWindows) {
-            Start-Process -FilePath 'powershell.exe' -ArgumentList '-NoExit', '-Command', $frontendCommand -WorkingDirectory $AngularPath
+            Start-Process -FilePath 'pwsh.exe' -ArgumentList '-NoExit', '-Command', $frontendCommand -WorkingDirectory $AngularPath
         }
         else {
             Write-Host "-- Running frontend in current console --"; Invoke-Expression $frontendCommand
@@ -181,7 +181,7 @@ else {
         Write-Host "Starting Spring Boot application (bootRun)..."
         $backendCommand = "Set-Location -LiteralPath '$BackendPath'; & '.\gradlew.bat' bootRun"
         if ($OpenWindows) {
-            Start-Process -FilePath 'powershell.exe' -ArgumentList '-NoExit', '-Command', $backendCommand -WorkingDirectory $BackendPath
+            Start-Process -FilePath 'pwsh.exe' -ArgumentList '-NoExit', '-Command', $backendCommand -WorkingDirectory $BackendPath
         }
         else {
             Invoke-Expression $backendCommand
